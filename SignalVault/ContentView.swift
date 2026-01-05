@@ -22,6 +22,7 @@ struct ContentView: View {
     
     // Legal Compliance
     @AppStorage("hasAcceptedDisclaimer") private var hasAcceptedDisclaimer = false
+    @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false // Mission 12
     
     var body: some View {
         TabView {
@@ -62,12 +63,49 @@ struct ContentView: View {
                     // 4. Console
                     TradeConsoleView(
                         currentPrice: chartViewModel.currentPrice,
-                        activeSignal: chartViewModel.activeSignal
+                        activeSignal: chartViewModel.activeSignal,
+                        selectedSymbol: chartViewModel.selectedSymbol
                     )
                 }
                 .navigationTitle("Command Center")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
+                    // Mission 11: Asset & Simulation Menu
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Section("Asset") {
+                                Button("Bitcoin (BTC)") { chartViewModel.changeSymbol(to: "BTC") }
+                                Button("Ethereum (ETH)") { chartViewModel.changeSymbol(to: "ETH") }
+                                Button("Solana (SOL)") { chartViewModel.changeSymbol(to: "SOL") }
+                                Button("S&P 500 (SPY)") { chartViewModel.changeSymbol(to: "SPY") }
+                            }
+                            
+                            Section("Simulation") {
+                                Toggle("Realistic Slippage (0.05%)", isOn: $isRealisticSlippageEnabled)
+                                
+                                Button(role: .destructive) {
+                                    // Reset Logic
+                                    // Note: BankManager.resetAccount throws, so we try?
+                                    Task { @MainActor in
+                                        try? BankManager.shared.resetAccount(modelContext: modelContext)
+                                        HapticManager.shared.playSuccess()
+                                    }
+                                } label: {
+                                    Label("Reset Sandbox", systemImage: "trash")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(chartViewModel.selectedSymbol)
+                                    .font(.headline)
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    }
+                    
                     ToolbarItem(placement: .topBarTrailing) {
                          Button(action: {
                              chartViewModel.toggleSimulation()

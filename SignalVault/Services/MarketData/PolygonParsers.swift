@@ -41,12 +41,14 @@ struct PolygonStatus: Decodable {
 struct PolygonTrade: Decodable {
     let sym: String
     let p: Double // Price
+    let s: Double // Size/Volume
     let t: Int64  // Timestamp (Unix MS)
 }
 
 struct PolygonCryptoTrade: Decodable {
     let pair: String
     let p: Double
+    let s: Double // Size
     let t: Int64
 }
 
@@ -58,12 +60,14 @@ extension PolygonMessage {
             return MarketTick(
                 symbol: t.sym,
                 price: t.p,
+                volume: t.s,
                 timestamp: Date(timeIntervalSince1970: TimeInterval(t.t) / 1000.0)
             )
         case .cryptoTrade(let t):
             return MarketTick(
                 symbol: t.pair, // e.g. "BTC-USD"
                 price: t.p,
+                volume: t.s,
                 timestamp: Date(timeIntervalSince1970: TimeInterval(t.t) / 1000.0)
             )
         default:

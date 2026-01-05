@@ -43,6 +43,55 @@ struct MarketChartView: View {
                     .shadow(color: (viewModel.activeSignal?.isBuy ?? false) ? .green : .clear, radius: 10)
                 }
                 
+                // Mission 13: Oracle Cone (Predictive)
+                if let projection = viewModel.projection, let lastDate = viewModel.ticks.last?.timestamp {
+                    let interval: TimeInterval = 0.5 // Est. bar duration
+                    
+                    ForEach(projection.points) { point in
+                        let futureDate = lastDate.addingTimeInterval(interval * Double(point.indexOffset))
+                        
+                        // 2SD Cone (95% Probability)
+                        AreaMark(
+                            x: .value("Time", futureDate),
+                            yStart: .value("Lower 2SD", point.lower2SD),
+                            yEnd: .value("Upper 2SD", point.upper2SD)
+                        )
+                        .foregroundStyle(projection.isReliable ? .blue.opacity(0.1) : .gray.opacity(0.1))
+                        
+                        // 1SD Cone (68% Probability)
+                        AreaMark(
+                            x: .value("Time", futureDate),
+                            yStart: .value("Lower 1SD", point.lower1SD),
+                            yEnd: .value("Upper 1SD", point.upper1SD)
+                        )
+                        .foregroundStyle(projection.isReliable ? .blue.opacity(0.2) : .gray.opacity(0.2))
+                        
+                        // Projected Path
+                        LineMark(
+                            x: .value("Time", futureDate),
+                            y: .value("Projected", point.price)
+                        )
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(.white.opacity(0.5))
+                    }
+                }
+                
+                // Mission 13: Price Stretched Alert
+                if let alert = viewModel.chartAlert {
+                    RuleMark(y: .value("Alert", viewModel.currentPrice))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
+                        .foregroundStyle(.red)
+                        .annotation(position: .top) {
+                            Text(alert) // e.g. "PRICE STRETCHED: 3.1σ"
+                                .font(.caption.bold())
+                                .foregroundStyle(.white)
+                                .padding(6)
+                                .background(Color.red.gradient)
+                                .cornerRadius(8)
+                                .shadow(radius: 2)
+                        }
+                }
+                
                 // Mission 8: Flash Alert Overlay
                 if let signal = viewModel.activeSignal {
                      RuleMark(y: .value("Flash", 0)) // Hidden Anchor

@@ -13,6 +13,9 @@ class MarketChartViewModel {
     var currentPrice: Double = 0.0
     var activeSignal: TradeSignal?
     
+    // Mission 11: Multi-Asset Support
+    var selectedSymbol: String = "BTC"
+    
     // Scrubbing State
     var selectedDate: Date?
     var selectedPrice: Double?
@@ -20,6 +23,11 @@ class MarketChartViewModel {
     // Services
     private let marketService: MarketDataProvider
     private let engine: SignalEngine
+    private let projectionEngine = ProjectionEngine() // Mission 13
+    
+    // Mission 13: Oracle State
+    var projection: ProjectionResult?
+    var chartAlert: String?
     
     // Config
     private let maxPoints = 500 // Limit for performance
@@ -43,6 +51,23 @@ class MarketChartViewModel {
     private var dataTask: Task<Void, Never>?
     var isRunning: Bool = false
     
+    func changeSymbol(to newSymbol: String) {
+        stop()
+        selectedSymbol = newSymbol
+        
+        // Reset buffers
+        ticks.removeAll()
+        signals.removeAll()
+        currentPrice = 0.0
+        activeSignal = nil
+        
+        // Mission 12: Reset AI Engine
+        Task {
+            await engine.reset()
+            start()
+        }
+    }
+    
     func toggleSimulation() {
         if isRunning {
             stop()
@@ -57,7 +82,7 @@ class MarketChartViewModel {
         
         dataTask = Task {
             try? await marketService.connect()
-            let stream = await marketService.streamQuotes(for: ["BTC"])
+            let stream = await marketService.streamQuotes(for: [selectedSymbol])
             
             for await tick in stream {
                 if Task.isCancelled { break }
@@ -78,16 +103,6 @@ class MarketChartViewModel {
                     switch newSignal {
                     case .strongBuy, .strongSell:
                         AudioService.shared.announceSignal(symbol: tick.symbol, price: tick.price, signal: newSignal)
-                        
-                        // Log for Mirror/Performance
-                        // Note: Using a MainActor isolated context here might be tricky if not passed in.
-                        // Ideally we have a 'SignalLoggerService'.
-                        // For MVP, we'll dispatch to a ModelActor or assume View context availability if added?
-                        // MarketChartViewModel is usually Observale, non-actor.
-                        // Let's print for now OR add ModelContext dependency?
-                        // "Update MarketChartViewModel to Log Signals" -> Needs ModelContext.
-                        // We will defer the actual DB insert to a method we can call safely or inject.
-                        
                     default:
                         break
                     }
@@ -108,6 +123,26 @@ class MarketChartViewModel {
                             // self.activeSignal = nil 
                         }
                     }
+                }
+                
+                // 3. Update Oracle Projection
+                // Get last 50 points for regression
+                if self.ticks.count >= 30 {
+                   let recentPrices = self.ticks.suffix(50).map { $0.price }
+                   let result = await projectionEngine.calculateProjection(recentPrices: recentPrices)
+                   self.projection = result
+                   
+                   // Check for Price Stretched (Mean Reversion)
+                   if let res = result, abs(res.currentDeviationSigma) > 2.5 {
+                       self.chartAlert = "PRICE STRETCHED: \(String(format: "%.1f", res.currentDeviationSigma))σ"
+                       // Haptic for danger
+                       if abs(res.currentDeviationSigma) > 3.0 { // Extreme
+                           let gen = UINotificationFeedbackGenerator()
+                           gen.notificationOccurred(.warning)
+                       }
+                   } else {
+                       self.chartAlert = nil
+                   }
                 }
             }
         }

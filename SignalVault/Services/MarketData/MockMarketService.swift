@@ -27,6 +27,7 @@ final class MockMarketService: MarketDataProvider {
                     let tick = MarketTick(
                         symbol: symbols.first ?? "BTC",
                         price: currentPrice,
+                        volume: Double.random(in: 100...2000), // Variable volume
                         timestamp: Date()
                     )
                     

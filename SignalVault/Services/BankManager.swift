@@ -21,4 +21,19 @@ class BankManager {
             print("Failed to fetch or create account: \(error)")
         }
     }
+    
+    // Mission 11: Sandbox Reset
+    func resetAccount(modelContext: ModelContext) throws {
+        // 1. Delete all accounts
+        try modelContext.delete(model: Account.self)
+        // 2. Delete all positions (optional deep clean)
+        try modelContext.delete(model: Position.self)
+        try modelContext.delete(model: SignalLog.self)
+        
+        // 3. Re-initialize
+        let newAccount = Account(startingCapital: 100_000.0)
+        modelContext.insert(newAccount)
+        try modelContext.save()
+        print("🔄 SANDBOX RESET: Vault restored to $100,000.00")
+    }
 }

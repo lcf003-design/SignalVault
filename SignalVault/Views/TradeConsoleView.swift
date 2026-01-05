@@ -4,10 +4,12 @@ import SwiftData
 struct TradeConsoleView: View {
     @Environment(\.modelContext) private var modelContext
     @Query private var accounts: [Account]
+    @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false
     
     // Observed from parent or VM
     var currentPrice: Double
     var activeSignal: TradeSignal?
+    var selectedSymbol: String // Mission 11
     
     var body: some View {
         VStack {
@@ -18,7 +20,7 @@ struct TradeConsoleView: View {
                 if let signal = activeSignal {
                     SignalBadge(signal: signal)
                 } else {
-                    Text("SCANNING...")
+                    Text("SCANNING \(selectedSymbol)...")
                         .font(.caption.bold())
                         .foregroundStyle(.secondary)
                         .padding(.horizontal, 8)
@@ -32,7 +34,7 @@ struct TradeConsoleView: View {
                 // Action Button
                 if let account = accounts.first {
                     Button(action: {
-                        copyTradeToClipboard(currentPrice: currentPrice, symbol: "BTC") // Hardcoded symbol for now or passed
+                        copyTradeToClipboard(currentPrice: currentPrice, symbol: selectedSymbol)
                     }) {
                         Image(systemName: "doc.on.doc")
                             .font(.headline)
@@ -103,17 +105,17 @@ struct TradeConsoleView: View {
             do {
                 try await executor.executeTrade(
                     accountID: accountID,
-                    symbol: "BTC",
+                    symbol: selectedSymbol,
                     price: currentPrice,
                     quantity: 1.0, // Fixed size for MVP
                     isLong: isLong,
                     stopLoss: stopLoss,
                     takeProfit: takeProfit,
-                    slippage: 0.0005 // 0.05% Slippage
+                    slippage: isRealisticSlippageEnabled ? 0.0005 : 0.0 // 0.05% if enabled
                 )
                 
                 await MainActor.run {
-                    LiveActivityManager.shared.startMetricAttributes(symbol: "BTC", entryPrice: currentPrice, isLong: isLong)
+                    LiveActivityManager.shared.startMetricAttributes(symbol: selectedSymbol, entryPrice: currentPrice, isLong: isLong)
                     HapticManager.shared.playSuccess() // Enhanced haptic confirmation
                 }
                 
