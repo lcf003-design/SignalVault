@@ -46,7 +46,6 @@ struct TradeConsoleView: View {
                             .keyboardType(.decimalPad)
                             .focused($isInputFocused)
                             .multilineTextAlignment(.trailing)
-                            .addKeyboardDoneButton()
                     }
                     .padding(10)
                     .background(Color(uiColor: .secondarySystemBackground))
@@ -130,6 +129,8 @@ struct TradeConsoleView: View {
             .padding(.bottom)
         }
         .background(Material.bar)
+        .addKeyboardDoneButton()
+        .hideKeyboardOnTap()
     }
     
     // Logic Helpers

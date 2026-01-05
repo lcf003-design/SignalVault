@@ -13,4 +13,11 @@ extension View {
             }
         }
     }
+    
+    /// Dismisses keyboard when tapping outside or via internal logic.
+    func hideKeyboardOnTap() -> some View {
+        self.onTapGesture {
+            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        }
+    }
 }

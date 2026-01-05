@@ -43,7 +43,6 @@ struct SettingsView: View {
                         
                         SecureField("Enter your API Key", text: $apiKeyInput)
                             .textContentType(.password)
-                            .addKeyboardDoneButton()
                             .onSubmit {
                                 Secrets.polygonAPIKey = apiKeyInput
                             }
@@ -97,6 +96,8 @@ struct SettingsView: View {
                 }
             }
             .navigationTitle("Settings")
+            .addKeyboardDoneButton()
+            .hideKeyboardOnTap()
             .onAppear {
                 // Pre-fill input if it's not default
                 let current = Secrets.polygonAPIKey
