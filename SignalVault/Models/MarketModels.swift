@@ -1,5 +1,10 @@
 import Foundation
 
+enum AssetType: String, Codable {
+    case stock
+    case option
+}
+
 struct MarketTick: Sendable {
     let symbol: String
     let price: Double

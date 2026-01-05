@@ -20,58 +20,81 @@ struct ContentView: View {
     
     @Query private var accounts: [Account]
     
+    // Legal Compliance
+    @AppStorage("hasAcceptedDisclaimer") private var hasAcceptedDisclaimer = false
+    
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 0) {
-                // 1. Header & Net Worth
-                VStack(spacing: 8) {
-                    Text("FAKE NET WORTH")
-                        .font(.caption)
-                        .foregroundStyle(.secondary)
-                        .tracking(2)
+        TabView {
+            // Tab 1: Command Center
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // 1. Header & Net Worth
+                    VStack(spacing: 8) {
+                        Text("FAKE NET WORTH")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .tracking(2)
+                        
+                        if let account = accounts.first {
+                            Text(account.currentBalance, format: .currency(code: "USD"))
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.green)
+                                .contentTransition(.numericText())
+                        } else {
+                            Text("$0.00")
+                                .onAppear {
+                                    BankManager.shared.ensureAccountExists(modelContext: modelContext)
+                                }
+                        }
+                    }
+                    .padding(.top)
                     
-                    if let account = accounts.first {
-                        Text(account.currentBalance, format: .currency(code: "USD"))
-                            .font(.system(size: 36, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color.green)
-                            .contentTransition(.numericText())
-                    } else {
-                        Text("$0.00")
-                            .onAppear {
-                                BankManager.shared.ensureAccountExists(modelContext: modelContext)
-                            }
+                    // 2. Chart
+                    MarketChartView(viewModel: chartViewModel)
+                        .frame(maxHeight: 300)
+                        .padding(.vertical)
+                    
+                    // 3. Positions
+                    LivePositionsCard(currentPrice: chartViewModel.currentPrice)
+                    
+                    Spacer()
+                    
+                    // 4. Console
+                    TradeConsoleView(
+                        currentPrice: chartViewModel.currentPrice,
+                        activeSignal: chartViewModel.activeSignal
+                    )
+                }
+                .navigationTitle("Command Center")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                         Button(action: {
+                             chartViewModel.toggleSimulation()
+                         }) {
+                             Image(systemName: chartViewModel.isRunning ? "pause.fill" : "play.fill")
+                                 .foregroundStyle(chartViewModel.isRunning ? .red : .orange)
+                         }
                     }
                 }
-                .padding(.top)
-                
-                // 2. Chart
-                MarketChartView(viewModel: chartViewModel)
-                    .frame(maxHeight: 300)
-                    .padding(.vertical)
-                
-                // 3. Positions
-                LivePositionsCard(currentPrice: chartViewModel.currentPrice)
-                
-                Spacer()
-                
-                // 4. Console
-                TradeConsoleView(
-                    currentPrice: chartViewModel.currentPrice,
-                    activeSignal: chartViewModel.activeSignal
-                )
             }
-            .navigationTitle("Command Center")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                     Button(action: {
-                         chartViewModel.toggleSimulation()
-                     }) {
-                         Image(systemName: chartViewModel.isRunning ? "pause.fill" : "play.fill")
-                             .foregroundStyle(chartViewModel.isRunning ? .red : .orange)
-                     }
-                }
+            .tabItem {
+                Label("Trade", systemImage: "chart.bar.xaxis")
             }
+            
+            // Tab 2: Performance (The Mirror)
+            NavigationStack {
+                PerformanceDashboard()
+            }
+            .tabItem {
+                Label("Performance", systemImage: "timer")
+            }
+        }
+        .fullScreenCover(isPresented: Binding(
+            get: { !hasAcceptedDisclaimer },
+            set: { _ in }
+        )) {
+            DisclaimerView(hasAccepted: $hasAcceptedDisclaimer)
         }
     }
 }

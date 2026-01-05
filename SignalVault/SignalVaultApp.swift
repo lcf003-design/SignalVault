@@ -4,12 +4,13 @@ import SwiftData
 @main
 struct SignalVaultApp: App {
     var sharedModelContainer: ModelContainer = {
-        let schema = Schema([
-            Account.self,
-            Position.self,
-            SignalLog.self,
-        ])
-        let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
+        let schema = Schema(versionedSchema: SchemaV1.self)
+        let modelConfiguration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: false,
+            cloudKitDatabase: .automatic
+        )
+
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
