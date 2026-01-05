@@ -11,10 +11,69 @@ struct TradeConsoleView: View {
     var activeSignal: TradeSignal?
     var selectedSymbol: String // Mission 11
     
+    // Mission 21: Smart Order Entry State
+    enum OrderMode: String, CaseIterable {
+        case shares = "Shares"
+        case dollars = "Dollars"
+    }
+    
+    @State private var orderMode: OrderMode = .shares
+    @State private var inputAmount: Double?
+    @FocusState private var isInputFocused: Bool
+    
     var body: some View {
-        VStack {
+        VStack(spacing: 12) {
             Divider()
             
+            // 1. Order Entry Controls
+            VStack(spacing: 12) {
+                // Mode Toggle
+                Picker("Order Mode", selection: $orderMode) {
+                    ForEach(OrderMode.allCases, id: \.self) { mode in
+                        Text(mode.rawValue).tag(mode)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .padding(.horizontal)
+                
+                // Input & Quick Buttons
+                HStack(spacing: 12) {
+                    HStack {
+                        Text(orderMode == .dollars ? "$" : "#")
+                            .foregroundStyle(.secondary)
+                        
+                        TextField("Amount", value: $inputAmount, format: .number)
+                            .keyboardType(.decimalPad)
+                            .focused($isInputFocused)
+                            .multilineTextAlignment(.trailing)
+                    }
+                    .padding(10)
+                    .background(Color(uiColor: .secondarySystemBackground))
+                    .cornerRadius(8)
+                    
+                    // Quick Size Buttons
+                    if let account = accounts.first {
+                        HStack(spacing: 4) {
+                            Button("25%") { setQuickSize(percent: 0.25, account: account) }
+                            Button("50%") { setQuickSize(percent: 0.50, account: account) }
+                            Button("MAX") { setQuickSize(percent: 0.99, account: account) } // 99% to leave room for slippage
+                        }
+                        .buttonStyle(.bordered)
+                        .font(.caption)
+                    }
+                }
+                .padding(.horizontal)
+                
+                // Validation Feedback
+                if let account = accounts.first, estimatedCost > account.currentBalance {
+                    Text("Insufficient Buying Power (Avail: \(account.currentBalance, format: .currency(code: "USD")))")
+                        .font(.caption)
+                        .foregroundStyle(.red)
+                }
+            }
+            .padding(.top, 8)
+            
+            // 2. Status & Execution
             HStack {
                 // Status Badge
                 if let signal = activeSignal {
@@ -34,52 +93,66 @@ struct TradeConsoleView: View {
                 // Action Button
                 if let account = accounts.first {
                     Button(action: {
-                        copyTradeToClipboard(currentPrice: currentPrice, symbol: selectedSymbol)
-                    }) {
-                        Image(systemName: "doc.on.doc")
-                            .font(.headline)
-                            .foregroundStyle(.secondary)
-                            .padding(10)
-                            .background(Material.thin)
-                            .clipShape(Circle())
-                    }
-                    .help("Copy Signal to Clipboard")
-                    
-                    Button(action: {
                         executeShadowTrade(accountID: account.id)
+                        isInputFocused = false
                     }) {
-                        Text("PLACE SHADOW TRADE")
-                            .font(.headline)
-                            .foregroundStyle(.black)
-                            .padding(.horizontal)
-                            .padding(.vertical, 12)
-                            .background(Color.primary)
-                            .clipShape(RoundedRectangle(cornerRadius: 12))
+                        HStack {
+                            if let signal = activeSignal {
+                                VStack(spacing: 2) {
+                                    Text("\(signal.isBuy ? "BUY" : "SELL") \(selectedSymbol)")
+                                        .fontWeight(.bold)
+                                    
+                                    // Dynamic Quantity Display
+                                    if estimatedQuantity > 0 {
+                                        Text("\(estimatedQuantity, format: .number.precision(.fractionLength(4))) Qty")
+                                            .font(.caption2)
+                                            .opacity(0.9)
+                                    }
+                                }
+                            } else {
+                                Text("AWAITING SIGNAL...")
+                                    .fontWeight(.bold)
+                            }
+                        }
+                        .padding(.horizontal)
+                        .padding(.vertical, 10) // Slightly smaller vertical to fit extra text
+                        .frame(maxWidth: .infinity)
+                        .background(isTradeValid(account: account) ? buttonColor : Color.gray)
+                        .foregroundStyle(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .disabled(activeSignal == nil)
-                    .opacity(activeSignal == nil ? 0.5 : 1.0)
+                    .disabled(!isTradeValid(account: account) || activeSignal == nil)
+                    .opacity((!isTradeValid(account: account) || activeSignal == nil) ? 0.3 : 1.0)
                 }
             }
-            .padding()
-            .background(Material.bar)
+            .padding(.horizontal)
+            .padding(.bottom)
+        }
+        .background(Material.bar)
+    }
+    
+    // Logic Helpers
+    private var estimatedQuantity: Double {
+        guard let amount = inputAmount, amount > 0 else { return 0 }
+        if orderMode == .shares {
+            return amount
+        } else {
+            return amount / currentPrice
         }
     }
     
-    private func copyTradeToClipboard(currentPrice: Double, symbol: String) {
-        // Format: BUY 1.0 BTC @ $96,500.00 | SL: $95,000 | TP: $98,000
-        // We'll calculate mock SL/TP for the clipboard based on signal
-        var isLong = false
-        if case .strongBuy = activeSignal { isLong = true }
-        
-        let sl = isLong ? currentPrice * 0.98 : currentPrice * 1.02
-        let tp = isLong ? currentPrice * 1.03 : currentPrice * 0.97
-        let dir = isLong ? "BUY" : "SELL"
-        
-        let string = String(format: "%@ 1.0 %@ @ $%.2f | SL: $%.2f | TP: $%.2f", dir, symbol, currentPrice, sl, tp)
-        UIPasteboard.general.string = string
-        
-        let generator = UINotificationFeedbackGenerator()
-        generator.notificationOccurred(.success)
+    private var estimatedCost: Double {
+        return estimatedQuantity * currentPrice
+    }
+    
+    private func isTradeValid(account: Account) -> Bool {
+        return estimatedQuantity > 0 && estimatedCost <= account.currentBalance
+    }
+    
+    private func setQuickSize(percent: Double, account: Account) {
+        let budget = account.currentBalance * percent
+        orderMode = .dollars
+        inputAmount = budget
     }
     
     private func executeShadowTrade(accountID: UUID) {
@@ -100,6 +173,8 @@ struct TradeConsoleView: View {
         let container = modelContext.container
         let executor = TradeExecutor(modelContainer: container)
         
+        let qtyToExecute = estimatedQuantity
+        
         Task {
             // Execute on background actor
             do {
@@ -107,7 +182,7 @@ struct TradeConsoleView: View {
                     accountID: accountID,
                     symbol: selectedSymbol,
                     price: currentPrice,
-                    quantity: 1.0, // Fixed size for MVP
+                    quantity: qtyToExecute, // Dynamic Quantity
                     isLong: isLong,
                     stopLoss: stopLoss,
                     takeProfit: takeProfit,
@@ -117,12 +192,23 @@ struct TradeConsoleView: View {
                 await MainActor.run {
                     LiveActivityManager.shared.startMetricAttributes(symbol: selectedSymbol, entryPrice: currentPrice, isLong: isLong)
                     HapticManager.shared.playSuccess() // Enhanced haptic confirmation
+                    // Reset Input after trade
+                    // inputAmount = nil // Optional: keep it or clear it. Let's keep it for rapid fire.
                 }
                 
-                print("✅ [UI] Trade Request Sent Successfully")
+                print("✅ [UI] Trade Request Sent Successfully: \(qtyToExecute) Shares")
             } catch {
                 print("❌ [UI] Trade Failed: \(error)")
             }
+        }
+    }
+    
+    private var buttonColor: Color {
+        guard let signal = activeSignal else { return .gray }
+        switch signal {
+        case .strongBuy: return .green
+        case .strongSell: return .red
+        case .neutral: return .gray
         }
     }
 }

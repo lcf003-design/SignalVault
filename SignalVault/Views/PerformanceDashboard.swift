@@ -77,6 +77,9 @@ struct PerformanceDashboard: View {
                         KPICard(title: "Signals Missed", value: "\(viewModel.aiEquityCurve.count)", icon: "eye.slash.fill", color: .purple)
                     }
                     .padding(.horizontal)
+                    
+                    // 4. Mission 23: Social Leaderboard
+                    LeaderboardView()
                 }
                 .padding(.top)
             }

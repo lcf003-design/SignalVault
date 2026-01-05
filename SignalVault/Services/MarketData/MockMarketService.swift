@@ -56,4 +56,20 @@ final class MockMarketService: MarketDataProvider {
         }
         return chain
     }
+    
+    // Mission 19: Sparkline Data Source
+    func generateStaticHistory(symbol: String, points: Int = 20) -> [Double] {
+        var prices: [Double] = []
+        var current = 100.0
+        
+        // Seed randomness based on symbol hash to keep it consistent-ish per view load
+        var rng = SystemRandomNumberGenerator()
+        
+        for _ in 0..<points {
+            let change = Double.random(in: -2.0...2.5, using: &rng) // Slight Bullish Bias
+            current += change
+            prices.append(current)
+        }
+        return prices
+    }
 }

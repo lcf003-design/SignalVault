@@ -36,4 +36,16 @@ class BankManager {
         try modelContext.save()
         print("🔄 SANDBOX RESET: Vault restored to $100,000.00")
     }
+    func depositFunds(amount: Double, modelContext: ModelContext) {
+        let descriptor = FetchDescriptor<Account>()
+        do {
+            if let account = try modelContext.fetch(descriptor).first {
+                account.currentBalance += amount
+                try modelContext.save()
+                print("💰 DEPOSIT SUCCESS: Added $\(amount). New Balance: $\(account.currentBalance)")
+            }
+        } catch {
+            print("❌ Deposit Failed: \(error)")
+        }
+    }
 }

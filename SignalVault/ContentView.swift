@@ -30,14 +30,26 @@ struct ContentView: View {
     @State private var showOnboarding = false
     @State private var showBacktest = false
     
+    @State private var showDepositSheet = false
+    
     // Mission 16: Macro State
     @State private var macroData: MacroData?
     @State private var currentRegime: MarketRegime = .neutral
     private let macroService = MacroService()
     
+    // Mission 19: Navigation State
+    @State private var selectedTab = 0
+    
     var body: some View {
-        TabView {
-            // Tab 1: Command Center
+        TabView(selection: $selectedTab) {
+            // Tab 1: Home (Mission 24)
+            PortfolioSummaryView(selectedTab: $selectedTab)
+                .tabItem {
+                    Label("Home", systemImage: "house.fill")
+                }
+                .tag(0)
+            
+            // Tab 2: Command Center
             NavigationStack {
                 VStack(spacing: 0) {
                     // Mission 16: Macro Status Bar
@@ -48,10 +60,21 @@ struct ContentView: View {
                     
                     // 1. Header & Net Worth
                     VStack(spacing: 8) {
-                        Text("FAKE NET WORTH")
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .tracking(2)
+                        HStack {
+                            Spacer()
+                            Text("FAKE NET WORTH")
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .tracking(2)
+                            
+                            // Mission 18: Deposit Button
+                            Button(action: { showDepositSheet.toggle() }) {
+                                Image(systemName: "plus.circle.fill")
+                                    .foregroundStyle(.blue)
+                                    .font(.system(size: 20))
+                            }
+                            Spacer()
+                        }
                         
                         if let account = accounts.first {
                             Text(account.currentBalance, format: .currency(code: "USD"))
@@ -97,31 +120,7 @@ struct ContentView: View {
                                 Button("S&P 500 (SPY)") { chartViewModel.changeSymbol(to: "SPY") }
                             }
                             
-                            Section("Simulation") {
-                                Toggle("Realistic Slippage (0.05%)", isOn: $isRealisticSlippageEnabled)
-                                
-                                Button {
-                                    showBacktest.toggle()
-                                } label: {
-                                    Label("Run Strategy Audit", systemImage: "clock.arrow.circlepath")
-                                }
-                                
-                                Button(role: .destructive) {
-                                    Task { @MainActor in
-                                        try? BankManager.shared.resetAccount(modelContext: modelContext)
-                                        HapticManager.shared.playSuccess()
-                                    }
-                                } label: {
-                                    Label("Reset Sandbox", systemImage: "trash")
-                                }
-                            }
-                            
-                            // Mission 17: Feedback
-                            Section("Beta Feedback") {
-                                Link(destination: URL(string: "mailto:support@signalvault.app?subject=SignalVault%20Feedback%20(v1.0.0)&body=Describe%20issue%20or%20feedback%20here...")!) {
-                                    Label("Report Bug / Feedback", systemImage: "ladybug")
-                                }
-                            }
+                            // Mission 20: Moved Simulation & Feedback to Settings Tab
                         } label: {
                             HStack(spacing: 4) {
                                 Text(chartViewModel.selectedSymbol)
@@ -150,6 +149,9 @@ struct ContentView: View {
             .sheet(isPresented: $showBacktest) {
                 BacktestConsoleView(symbol: chartViewModel.selectedSymbol)
             }
+            .sheet(isPresented: $showDepositSheet) {
+                DepositSheet()
+            }
             // Initiation Logic
             .onAppear {
                 // 1. Compliance Gate
@@ -177,13 +179,30 @@ struct ContentView: View {
                 }
             }
             
-            // Tab 2: Performance (The Mirror)
+            .tag(1) // Trade Tab
+            
+            // Tab 3: Performance (The Mirror)
             NavigationStack {
                 PerformanceDashboard()
             }
             .tabItem {
                 Label("Performance", systemImage: "timer")
             }
+            .tag(2)
+            
+            // Tab 4: Markets (Mission 19)
+            MarketsListView(selectedTab: $selectedTab, selectedSymbol: $chartViewModel.selectedSymbol)
+                .tabItem {
+                    Label("Markets", systemImage: "square.grid.2x2")
+                }
+                .tag(3)
+            
+            // Tab 5: Settings (Mission 20)
+            SettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+                .tag(4)
         }
         .fullScreenCover(isPresented: $showDisclaimer) {
             DisclaimerView(isPresented: $showDisclaimer)
