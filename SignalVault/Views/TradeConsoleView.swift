@@ -46,6 +46,7 @@ struct TradeConsoleView: View {
                             .keyboardType(.decimalPad)
                             .focused($isInputFocused)
                             .multilineTextAlignment(.trailing)
+                            .addKeyboardDoneButton()
                     }
                     .padding(10)
                     .background(Color(uiColor: .secondarySystemBackground))

@@ -43,6 +43,7 @@ struct SettingsView: View {
                         
                         SecureField("Enter your API Key", text: $apiKeyInput)
                             .textContentType(.password)
+                            .addKeyboardDoneButton()
                             .onSubmit {
                                 Secrets.polygonAPIKey = apiKeyInput
                             }
