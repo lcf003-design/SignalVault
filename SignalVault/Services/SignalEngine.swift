@@ -1,5 +1,7 @@
 import Foundation
 
+
+
 actor SignalEngine {
     // MARK: - State
     private var prices: [Double] = []
@@ -15,15 +17,11 @@ actor SignalEngine {
     
     // Config (Asset-Aware Defaults)
     private var config: EngineConfig = .stock
+    private var overrideConfig: EngineConfig? // Mission 14: Optimization override
     
-    struct EngineConfig {
-        let rsiPeriod: Int
-        let macdFast: Int
-        let macdSlow: Int
-        let signalPeriod: Int
-        
-        static let stock = EngineConfig(rsiPeriod: 14, macdFast: 12, macdSlow: 26, signalPeriod: 9)
-        static let crypto = EngineConfig(rsiPeriod: 9, macdFast: 8, macdSlow: 21, signalPeriod: 9)
+    func setOverrideConfig(_ config: EngineConfig?) {
+        self.overrideConfig = config
+        if let cfg = config { self.config = cfg }
     }
     
     func reset() {
@@ -35,17 +33,34 @@ actor SignalEngine {
         previousRSI = nil
     }
     
+    // Mission 15: Sentiment Overlay
+    private var currentSentiment: SentimentAnalysisResult?
+    // Mission 16: Macro Regime
+    private var currentRegime: MarketRegime = .neutral
+    
+    func updateSentiment(_ sentiment: SentimentAnalysisResult) {
+        self.currentSentiment = sentiment
+    }
+    
+    func updateRegime(_ regime: MarketRegime) {
+        self.currentRegime = regime
+        if regime == .riskOff {
+            print("📉 MACRO FILTER: Risk-Off Mode Activated. Reducing Conviction by 15%.")
+        }
+    }
+    
     // MARK: - Processing
     func process(tick: MarketTick) -> TradeSignal? {
-        // 0. Auto-Detect Asset Class & Config
-        let isCrypto = ["BTC", "ETH", "SOL"].contains(where: { tick.symbol.contains($0) })
-        if isCrypto && config.rsiPeriod != 9 {
-            print("🧠 AI ENGINE: Switching to CRYPTO Mode (Faster Volatility)")
-            self.config = .crypto
-            // We should ideally reset or just adapt. For simulation continuity, we adapt.
-        } else if !isCrypto && config.rsiPeriod != 14 {
-             print("🧠 AI ENGINE: Switching to STOCK Mode (Standard)")
-             self.config = .stock
+        // 0. Auto-Detect Asset Class & Config (Unless Overridden)
+        if overrideConfig == nil {
+            let isCrypto = ["BTC", "ETH", "SOL"].contains(where: { tick.symbol.contains($0) })
+            if isCrypto && config.rsiPeriod != 9 {
+                print("🧠 AI ENGINE: Switching to CRYPTO Mode (Faster Volatility)")
+                self.config = .crypto
+            } else if !isCrypto && config.rsiPeriod != 14 {
+                print("🧠 AI ENGINE: Switching to STOCK Mode (Standard)")
+                self.config = .stock
+            }
         }
         
         let price = tick.price
@@ -78,6 +93,7 @@ actor SignalEngine {
         
         // 4. Logic: Dual-Confirmation + Volume
         var tradeSignal: TradeSignal?
+        var rawSignal: TradeSignal?
         
         // Volume Confirmation (Mission 12)
         // Check if current volume > 20% above 10-period average
@@ -91,24 +107,63 @@ actor SignalEngine {
             // BUY: MACD Bullish + RSI crosses 30 + Volume
             if isBullishMACD && prevRSI < 30 && currentRSI >= 30 {
                 if volumeConfirmation {
-                    tradeSignal = .strongBuy(confidence: 0.95, price: price)
-                } else {
-                    // Weak buy if no volume? Or ignore?
-                    // Mission 12 says: "A 'Buy' signal is only 'High Conviction' if volume is..."
-                    // We'll treat it as Neutral or skip for High Conviction requirement.
-                    // Let's implement Strict Mode: No signal if no volume.
-                     // tradeSignal = .neutral(confidence: 0.5)
+                    rawSignal = .strongBuy(confidence: 0.95, price: price)
                 }
             }
             // SELL: MACD Bearish + RSI crosses 70 + Volume
             else if isBearishMACD && prevRSI > 70 && currentRSI <= 70 {
-                 if volumeConfirmation {
-                    tradeSignal = .strongSell(confidence: 0.95, price: price)
-                 }
+                if volumeConfirmation {
+                    rawSignal = .strongSell(confidence: 0.95, price: price)
+                }
             }
         }
         
         previousRSI = currentRSI
+        
+        // 5. Sentiment Divergence Check (Mission 15)
+        if let signal = rawSignal, let sentiment = currentSentiment {
+            var adjustedConfidence = 0.95
+            
+            // Mission 16: Macro Regime Filter
+            if currentRegime == .riskOff {
+                adjustedConfidence *= 0.85 // Reduce by 15% -> ~0.80
+            }
+            
+            switch signal {
+            case .strongBuy(_, let price):
+                if sentiment.aggregateScore < -0.3 {
+                    print("⚠️ DIVERGENCE ALERT: Technical Bullish, but News is Bearish. Possible BULL TRAP.")
+                    return nil
+                } else {
+                    tradeSignal = .strongBuy(confidence: adjustedConfidence, price: price)
+                }
+            case .strongSell(_, let price):
+                if sentiment.aggregateScore > 0.3 {
+                    print("⚠️ DIVERGENCE ALERT: Technical Bearish, but News is Bullish. Possible BEAR TRAP.")
+                    return nil
+                } else {
+                    tradeSignal = .strongSell(confidence: adjustedConfidence, price: price)
+                }
+            case .neutral:
+                tradeSignal = .neutral(confidence: 0.5)
+            }
+        } else {
+            // Apply Macro Filter even if no sentiment (or if raw signal exists)
+             if let signal = rawSignal {
+                var adjustedConfidence = 0.95
+                if currentRegime == .riskOff { adjustedConfidence *= 0.85 }
+                
+                 switch signal {
+                 case .strongBuy(_, let price):
+                     tradeSignal = .strongBuy(confidence: adjustedConfidence, price: price)
+                 case .strongSell(_, let price):
+                     tradeSignal = .strongSell(confidence: adjustedConfidence, price: price)
+                 default:
+                     tradeSignal = signal
+                 }
+             }
+        }
+        
         return tradeSignal
     }
     
@@ -159,3 +214,5 @@ actor SignalEngine {
         return 100.0 - (100.0 / (1.0 + rs))
     }
 }
+
+

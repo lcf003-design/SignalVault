@@ -8,7 +8,7 @@ struct SignalVaultApp: App {
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .automatic
+            cloudKitDatabase: .none // Mission 9 Disabled for Sandbox iteration
         )
 
 
@@ -21,11 +21,15 @@ struct SignalVaultApp: App {
 
     // Shared Market Service
     @State private var marketService: MarketDataProvider = {
+        // Force Mock for testing Mission 13 without paid Polygon subscription
+        return MockMarketService()
+        /*
         if Secrets.polygonAPIKey != "YOUR_POLYGON_API_KEY" && !Secrets.polygonAPIKey.isEmpty {
             return LiveMarketService()
         } else {
             return MockMarketService()
         }
+        */
     }()
     
     // Risk Monitor

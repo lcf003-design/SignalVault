@@ -173,6 +173,12 @@ struct MarketChartView: View {
                     triggerFlash(signal: new)
                 }
             }
+            // Mission 15: Sentiment Dashboard
+            if let sentiment = viewModel.sentiment {
+                SentimentDashboardView(sentiment: sentiment)
+                    .padding(.horizontal)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
         }
     }
     
@@ -234,3 +240,5 @@ struct SignalBadge: View {
         }
     }
 }
+
+

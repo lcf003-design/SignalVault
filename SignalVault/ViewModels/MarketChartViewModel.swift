@@ -24,10 +24,14 @@ class MarketChartViewModel {
     private let marketService: MarketDataProvider
     private let engine: SignalEngine
     private let projectionEngine = ProjectionEngine() // Mission 13
+    private let sentimentService = SentimentService() // Mission 15
     
     // Mission 13: Oracle State
     var projection: ProjectionResult?
     var chartAlert: String?
+    
+    // Mission 15: Sentiment State
+    var sentiment: SentimentAnalysisResult?
     
     // Config
     private let maxPoints = 500 // Limit for performance
@@ -152,5 +156,17 @@ class MarketChartViewModel {
         isRunning = false
         dataTask?.cancel()
         dataTask = nil
+    }
+    
+    // Mission 15: Sentiment Integration
+    func fetchSentiment() async {
+        let result = await sentimentService.fetchSentiment(for: selectedSymbol)
+        self.sentiment = result
+        await engine.updateSentiment(result)
+    }
+    
+    // Mission 16: Macro Integration
+    func updateRegime(_ regime: MarketRegime) async {
+        await engine.updateRegime(regime)
     }
 }

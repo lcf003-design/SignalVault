@@ -58,3 +58,86 @@ struct ProjectionResult: Sendable {
     let isReliable: Bool // Based on R-squared threshold
     let currentDeviationSigma: Double // Z-Score of current price (Mission 13)
 }
+
+// Mission 14: Backtest Engine
+enum TradeOutcome: String, Codable, Sendable {
+    case win = "WIN"
+    case loss = "LOSS"
+    case hitSL = "SL"
+    case hitTP = "TP"
+    case open = "OPEN"
+}
+
+struct BacktestTrade: Identifiable, Sendable {
+    let id = UUID()
+    let entryDate: Date
+    let entryPrice: Double
+    let exitDate: Date
+    let exitPrice: Double
+    let isLong: Bool
+    let pnl: Double // Realized PnL in dollars for fixed size, or percentage
+    let pnlPercent: Double
+    let outcome: TradeOutcome
+}
+
+struct BacktestResult: Sendable, Identifiable {
+    let id = UUID()
+    let equityCurve: [Double] // For charting
+    let finalBalance: Double
+    let totalReturnPercentage: Double
+    let winRate: Double
+    let maxDrawdown: Double
+    let trades: [BacktestTrade]
+    let totalTrades: Int
+    let avgWin: Double
+    let avgLoss: Double
+    let expectancyRatio: Double
+    let configName: String
+}
+
+// Mission 15: Sentiment Intelligence
+struct NewsItem: Identifiable, Sendable {
+    let id = UUID()
+    let headline: String
+    let source: String
+    let url: String?
+    let timestamp: Date
+    let sentimentScore: Double // -1.0 (Panic) to +1.0 (Euphoria)
+}
+
+struct SentimentAnalysisResult: Sendable {
+    let aggregateScore: Double // Weighted Average
+    let label: String // "Bullish", "Bearish", "Neutral"
+    let divergenceDetected: Bool // Technical vs Sentiment Conflict
+    let headlines: [NewsItem]
+}
+
+// Mission 16: Global Macro Models
+enum MarketRegime: String, Sendable, Codable {
+    case riskOn = "RISK ON"
+    case riskOff = "RISK OFF"
+    case neutral = "NEUTRAL"
+}
+
+struct MacroData: Sendable {
+    let fedRate: Double
+    let cpiYearly: Double
+    let unemploymentRate: Double
+    let treasury10Y: Double
+    let treasury2Y: Double
+    let nextFedMeeting: Date
+    let isYieldCurveInverted: Bool // Stored property
+    
+    init(fedRate: Double, cpiYearly: Double, unemploymentRate: Double, treasury10Y: Double, treasury2Y: Double, nextFedMeeting: Date) {
+        self.fedRate = fedRate
+        self.cpiYearly = cpiYearly
+        self.unemploymentRate = unemploymentRate
+        self.treasury10Y = treasury10Y
+        self.treasury2Y = treasury2Y
+        self.nextFedMeeting = nextFedMeeting
+        self.isYieldCurveInverted = treasury2Y > treasury10Y
+    }
+}
+
+
+

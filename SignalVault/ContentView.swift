@@ -20,15 +20,32 @@ struct ContentView: View {
     
     @Query private var accounts: [Account]
     
-    // Legal Compliance
-    @AppStorage("hasAcceptedDisclaimer") private var hasAcceptedDisclaimer = false
-    @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false // Mission 12
+    // Legal Compliance (Mission 16)
+    @AppStorage("hasAcceptedRisk") private var hasAcceptedRisk = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false // Mission 17
+    
+    @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false
+    
+    @State private var showDisclaimer = false
+    @State private var showOnboarding = false
+    @State private var showBacktest = false
+    
+    // Mission 16: Macro State
+    @State private var macroData: MacroData?
+    @State private var currentRegime: MarketRegime = .neutral
+    private let macroService = MacroService()
     
     var body: some View {
         TabView {
             // Tab 1: Command Center
             NavigationStack {
                 VStack(spacing: 0) {
+                    // Mission 16: Macro Status Bar
+                    if let data = macroData {
+                        MacroStatusBar(macroData: data, regime: currentRegime)
+                            .transition(.move(edge: .top))
+                    }
+                    
                     // 1. Header & Net Worth
                     VStack(spacing: 8) {
                         Text("FAKE NET WORTH")
@@ -83,15 +100,26 @@ struct ContentView: View {
                             Section("Simulation") {
                                 Toggle("Realistic Slippage (0.05%)", isOn: $isRealisticSlippageEnabled)
                                 
+                                Button {
+                                    showBacktest.toggle()
+                                } label: {
+                                    Label("Run Strategy Audit", systemImage: "clock.arrow.circlepath")
+                                }
+                                
                                 Button(role: .destructive) {
-                                    // Reset Logic
-                                    // Note: BankManager.resetAccount throws, so we try?
                                     Task { @MainActor in
                                         try? BankManager.shared.resetAccount(modelContext: modelContext)
                                         HapticManager.shared.playSuccess()
                                     }
                                 } label: {
                                     Label("Reset Sandbox", systemImage: "trash")
+                                }
+                            }
+                            
+                            // Mission 17: Feedback
+                            Section("Beta Feedback") {
+                                Link(destination: URL(string: "mailto:support@signalvault.app?subject=SignalVault%20Feedback%20(v1.0.0)&body=Describe%20issue%20or%20feedback%20here...")!) {
+                                    Label("Report Bug / Feedback", systemImage: "ladybug")
                                 }
                             }
                         } label: {
@@ -119,6 +147,35 @@ struct ContentView: View {
             .tabItem {
                 Label("Trade", systemImage: "chart.bar.xaxis")
             }
+            .sheet(isPresented: $showBacktest) {
+                BacktestConsoleView(symbol: chartViewModel.selectedSymbol)
+            }
+            // Initiation Logic
+            .onAppear {
+                // 1. Compliance Gate
+                if !hasAcceptedRisk {
+                    showDisclaimer = true
+                } else if !hasCompletedOnboarding {
+                    // 2. Onboarding Gate (only if disclaimer signed)
+                    showOnboarding = true
+                }
+                
+                // 3. Kickstart Services
+                Task {
+                    let data = await macroService.fetchMacroData()
+                    let regime = await macroService.determineRegime(data: data)
+                    withAnimation {
+                        self.macroData = data
+                        self.currentRegime = regime
+                    }
+                    await chartViewModel.updateRegime(regime)
+                }
+            }
+            .onChange(of: hasAcceptedRisk) { oldValue, newValue in
+                if newValue && !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
+            }
             
             // Tab 2: Performance (The Mirror)
             NavigationStack {
@@ -128,11 +185,74 @@ struct ContentView: View {
                 Label("Performance", systemImage: "timer")
             }
         }
-        .fullScreenCover(isPresented: Binding(
-            get: { !hasAcceptedDisclaimer },
-            set: { _ in }
-        )) {
-            DisclaimerView(hasAccepted: $hasAcceptedDisclaimer)
+        .fullScreenCover(isPresented: $showDisclaimer) {
+            DisclaimerView(isPresented: $showDisclaimer)
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: Binding(
+                get: { showOnboarding },
+                set: { newValue in
+                    if !newValue { hasCompletedOnboarding = true }
+                    showOnboarding = newValue
+                }
+            ))
+        }
+    }
+}
+
+// Mission 16: UI Component (Moved here for build safety)
+struct MacroStatusBar: View {
+    let macroData: MacroData
+    let regime: MarketRegime
+    
+    var body: some View {
+        HStack {
+            // Regime Badge
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(regimeColor)
+                    .frame(width: 8, height: 8)
+                Text(regime.rawValue)
+                    .font(.caption.bold())
+                    .foregroundStyle(regimeColor)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(regimeColor.opacity(0.1))
+            .cornerRadius(8)
+            
+            Spacer()
+            
+            // Recession Warning (Yield Curve)
+            if macroData.isYieldCurveInverted {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text("Inverted Yield Curve")
+                }
+                .font(.caption)
+                .foregroundStyle(.orange)
+            }
+            
+            Spacer()
+            
+            // Fed Meeting
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text("FOMC: \(macroData.nextFedMeeting, format: .dateTime.month().day())")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Material.regular)
+    }
+    
+    var regimeColor: Color {
+        switch regime {
+        case .riskOn: return .green
+        case .riskOff: return .red
+        case .neutral: return .secondary
         }
     }
 }
