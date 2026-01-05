@@ -1,0 +1,369 @@
+Command line invocation:
+    /Applications/Xcode.app/Contents/Developer/usr/bin/xcodebuild -scheme SignalVault -destination "generic/platform=iOS Simulator" build
+
+2026-01-05 14:21:47.244 xcodebuild[26175:17953572] [MT] IDERunDestination: Supported platforms for the buildables in the current scheme is empty.
+ComputePackagePrebuildTargetDependencyGraph
+
+Prepare packages
+
+CreateBuildRequest
+
+SendProjectDescription
+
+CreateBuildOperation
+
+ComputeTargetDependencyGraph
+note: Building targets in dependency order
+note: Target dependency graph (1 target)
+    Target 'SignalVault' in project 'SignalVault' (no dependencies)
+
+GatherProvisioningInputs
+
+CreateBuildDescription
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang -v -E -dM -isysroot /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -x c -c /dev/null
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --print-asset-tag-combinations --output-format xml1 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Assets.xcassets
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/usr/bin/actool --version --output-format xml1
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc --version
+
+ExecuteExternalTool /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/ld -version_details
+
+Build description signature: 51d3031f3c23cf9fa6378dc8e00a9ab5
+Build description path: /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/XCBuildData/51d3031f3c23cf9fa6378dc8e00a9ab5.xcbuilddata
+ClangStatCache /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk /Users/9lives/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C53-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault.xcodeproj
+    /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/clang-stat-cache /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -o /Users/9lives/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C53-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache
+
+ProcessProductPackaging /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVault.entitlements /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+    Entitlements:
+    
+    {
+    "application-identifier" = "5HY722746C.com.larryfields.SignalVault";
+    "aps-environment" = development;
+    "com.apple.developer.icloud-container-identifiers" =     (
+        "iCloud.com.larryfields.SignalVault"
+    );
+    "com.apple.developer.icloud-services" =     (
+        CloudKit
+    );
+}
+    
+    builtin-productPackagingUtility /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVault.entitlements -entitlements -format xml -o /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent
+
+ProcessProductPackagingDER /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent.der (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    /usr/bin/derq query -f xml -i /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent -o /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app-Simulated.xcent.der --raw
+
+ProcessProductPackaging /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVault.entitlements /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+    Entitlements:
+    
+    {
+}
+    
+    builtin-productPackagingUtility /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVault.entitlements -entitlements -format xml -o /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent
+
+ProcessProductPackagingDER /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent.der (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    /usr/bin/derq query -f xml -i /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent -o /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault.app.xcent.der --raw
+
+SwiftDriver SignalVault normal x86_64 com.apple.xcode.tools.swift.compiler (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name SignalVault -Onone -enforce-exclusivity\=checked @/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64/SignalVault.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target x86_64-apple-ios26.2-simulator -g -module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -F /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64 -c -j12 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C53-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache -output-file-map /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64/SignalVault-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64/SignalVault.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64/SignalVault_const_extract_protocols.json -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-generated-files.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-own-target-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-all-target-headers.hmap -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-project-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources-normal/x86_64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/x86_64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/x86_64/SignalVault-Swift.h -working-directory /Users/9lives/Documents/GitHub/Xcode/SignalVault -experimental-emit-module-separately -disable-cmo
+
+SwiftDriver SignalVault normal arm64 com.apple.xcode.tools.swift.compiler (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    builtin-SwiftDriver -- /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc -module-name SignalVault -Onone -enforce-exclusivity\=checked @/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault.SwiftFileList -DDEBUG -default-isolation\=MainActor -enable-bare-slash-regex -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -target arm64-apple-ios26.2-simulator -g -module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -Xfrontend -serialize-debugging-options -enable-testing -index-store-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Index.noindex/DataStore -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -swift-version 5 -I /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -F /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -emit-localized-strings -emit-localized-strings-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64 -c -j12 -enable-batch-mode -incremental -Xcc -ivfsstatcache -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C53-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache -output-file-map /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault-OutputFileMap.json -use-frontend-parseable-output -save-temps -no-color-diagnostics -explicit-module-build -module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -clang-scanner-module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -sdk-module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex -serialize-diagnostics -emit-dependencies -emit-module -emit-module-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault.swiftmodule -validate-clang-modules-once -clang-build-session-file /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/swift-overrides.hmap -emit-const-values -Xfrontend -const-gather-protocols-file -Xfrontend /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault_const_extract_protocols.json -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-generated-files.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-own-target-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-all-target-headers.hmap -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-project-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources-normal/arm64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/arm64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources -Xcc -DDEBUG\=1 -emit-objc-header -emit-objc-header-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault-Swift.h -working-directory /Users/9lives/Documents/GitHub/Xcode/SignalVault -experimental-emit-module-separately -disable-cmo
+
+SwiftCompile normal arm64 Compiling\ Account.swift,\ MarketModels.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Account.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/MarketModels.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Account.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/MarketModels.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ DisclaimerView.swift,\ LivePositionsCard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/DisclaimerView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/LivePositionsCard.swift (in target 'SignalVault' from project 'SignalVault')
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/DisclaimerView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/LivePositionsCard.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ PerformanceViewModel.swift,\ BacktestConsoleView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/PerformanceViewModel.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/BacktestConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/PerformanceViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/BacktestConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ Position.swift,\ SchemaV1.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Position.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SchemaV1.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Position.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SchemaV1.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ TradeConsoleView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/TradeConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/TradeConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftEmitModule normal arm64 Emitting\ module\ for\ SignalVault (in target 'SignalVault' from project 'SignalVault')
+
+EmitSwiftModule normal arm64 (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SignalEngine.swift:19:41: warning: main actor-isolated static property 'stock' can not be referenced on a nonisolated actor instance
+    private var config: EngineConfig = .stock
+                                        ^
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/EngineConfig.swift:10:16: note: static property declared here
+    static let stock = EngineConfig(rsiPeriod: 14, macdFast: 12, macdSlow: 26, signalPeriod: 9)
+               ^
+
+SwiftCompile normal arm64 Compiling\ SignalVaultApp.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVaultApp.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVaultApp.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ ContentView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift (in target 'SignalVault' from project 'SignalVault')
+Failed frontend command:
+/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swift-frontend -frontend -c /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Account.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/MarketModels.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/Position.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SchemaV1.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SignalLog.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/LiveMarketService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MarketDataProvider.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MockMarketService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/PolygonParsers.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/PolygonSocketActor.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Quant/QuantEngine.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Risk/RiskMonitorActor.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Simulation/ThetaDecayService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/UX/HapticManager.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/UX/LiveActivityManager.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/AudioService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BacktestService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BankManager.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/EngineConfig.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MacroService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/ProjectionEngine.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SentimentService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SignalEngine.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SignalTestHarness.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/TradeExecutor.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Utilities/Secrets.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/MarketChartViewModel.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/PerformanceViewModel.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/BacktestConsoleView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/DisclaimerView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/LivePositionsCard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/MarketChartView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/PerformanceDashboard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/SentimentDashboardView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/TradeConsoleView.swift -primary-file /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVaultApp.swift /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/GeneratedAssetSymbols.swift -emit-dependencies-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.d -emit-const-values-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.swiftconstvalues -emit-reference-dependencies-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.swiftdeps -serialize-diagnostics-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.dia -emit-localized-strings -emit-localized-strings-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64 -target arm64-apple-ios26.2-simulator -module-can-import-version DeveloperToolsSupport 23.0.4 23.0.4 -module-can-import-version SwiftUI 7.2.5.1 7.2.5 -module-can-import-version UIKit 9126.2.4.1 9126.2.4 -disable-cross-import-overlay-search -swift-module-cross-import Darwin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator.sdk/usr/include/Darwin.swiftcrossimport/xlocale.swiftoverlay -swift-module-cross-import SwiftData /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/SwiftData.framework/Modules/SwiftData.swiftcrossimport/CoreData.swiftoverlay -swift-module-cross-import SwiftData /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk/System/Library/Frameworks/SwiftData.framework/Modules/SwiftData.swiftcrossimport/SwiftUI.swiftoverlay -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libFoundationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#FoundationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libObservationMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#ObservationMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libPreviewsMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#PreviewsMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftDataMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftDataMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftMacros -load-resolved-plugin /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/lib/swift/host/plugins/libSwiftUIMacros.dylib\#/Applications/Xcode.app/Contents/Developer/Platforms/iPhoneOS.platform/Developer/usr/bin/swift-plugin-server\#SwiftUIMacros -disable-implicit-swift-modules -Xcc -fno-implicit-modules -Xcc -fno-implicit-module-maps -explicit-swift-module-map-file /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault-dependencies-2.json -Xllvm -aarch64-use-tbi -enable-objc-interop -sdk /Applications/Xcode.app/Contents/Developer/Platforms/iPhoneSimulator.platform/Developer/SDKs/iPhoneSimulator26.2.sdk -I /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -F /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator -no-color-diagnostics -Xcc -fno-color-diagnostics -enable-testing -g -debug-info-format\=dwarf -dwarf-version\=5 -module-cache-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SwiftExplicitPrecompiledModules -swift-version 5 -enforce-exclusivity\=checked -Onone -D DEBUG -serialize-debugging-options -const-gather-protocols-file /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/SignalVault_const_extract_protocols.json -enable-upcoming-feature DisableOutwardActorInference -enable-upcoming-feature InferSendableFromCaptures -enable-upcoming-feature GlobalActorIsolatedTypesUsability -enable-upcoming-feature MemberImportVisibility -enable-upcoming-feature InferIsolatedConformances -enable-upcoming-feature NonisolatedNonsendingByDefault -enable-experimental-feature DebugDescriptionMacro -enable-bare-slash-regex -default-isolation\=MainActor -empty-abi-descriptor -validate-clang-modules-once -clang-build-session-file /Users/9lives/Library/Developer/Xcode/DerivedData/ModuleCache.noindex/Session.modulevalidation -Xcc -working-directory -Xcc /Users/9lives/Documents/GitHub/Xcode/SignalVault -enable-anonymous-context-mangled-names -file-compilation-dir /Users/9lives/Documents/GitHub/Xcode/SignalVault -Xcc -D_LIBCPP_HARDENING_MODE\=_LIBCPP_HARDENING_MODE_DEBUG -Xcc -ivfsstatcache -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SDKStatCaches.noindex/iphonesimulator26.2-23C53-7d00a8b37fbd7999ea79df8ebc024bf0.sdkstatcache -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/swift-overrides.hmap -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-generated-files.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-own-target-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-all-target-headers.hmap -Xcc -iquote -Xcc /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/SignalVault-project-headers.hmap -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Products/Debug-iphonesimulator/include -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources-normal/arm64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/arm64 -Xcc -I/Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources -Xcc -DDEBUG\=1 -no-auto-bridging-header-chaining -module-name SignalVault -frontend-parseable-output -disable-clang-spi -target-sdk-version 26.2 -target-sdk-name iphonesimulator26.2 -clang-target arm64-apple-ios26.2-simulator -in-process-plugin-server-path /Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/libSwiftInProcPluginServer.dylib -o /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.o -index-unit-output-path /SignalVault.build/Debug-iphonesimulator/SignalVault.build/Objects-normal/arm64/ContentView.o -index-store-path /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Index.noindex/DataStore -index-system-modules
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift:157:42: error: cannot call value of non-function type 'Binding<Subject>'
+                    await chartViewModel.updateRegime(regime)
+                                         ^
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift:157:42: error: value of type 'MarketChartViewModel' has no dynamic member 'updateRegime' using key path from root type 'MarketChartViewModel'
+                    await chartViewModel.updateRegime(regime)
+                          ~~~~~~~~~~~~~~ ^~~~~~~~~~~~
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift:157:27: error: referencing subscript 'subscript(dynamicMember:)' requires wrapper 'Binding<MarketChartViewModel>'
+                    await chartViewModel.updateRegime(regime)
+                          ^
+                          $
+
+SwiftCompile normal arm64 Compiling\ SentimentDashboardView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/SentimentDashboardView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/SentimentDashboardView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ QuantEngine.swift,\ MarketChartViewModel.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Quant/QuantEngine.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/MarketChartViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Quant/QuantEngine.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/MarketChartViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ GeneratedAssetSymbols.swift /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ MarketChartView.swift,\ PerformanceDashboard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/MarketChartView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/PerformanceDashboard.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/MarketChartView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/PerformanceDashboard.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftEmitModule normal x86_64 Emitting\ module\ for\ SignalVault (in target 'SignalVault' from project 'SignalVault')
+
+EmitSwiftModule normal x86_64 (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SignalEngine.swift:19:41: warning: main actor-isolated static property 'stock' can not be referenced on a nonisolated actor instance
+    private var config: EngineConfig = .stock
+                                        ^
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/EngineConfig.swift:10:16: note: static property declared here
+    static let stock = EngineConfig(rsiPeriod: 14, macdFast: 12, macdSlow: 26, signalPeriod: 9)
+               ^
+
+SwiftDriverJobDiscovery normal arm64 Compiling GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ GeneratedAssetSymbols.swift /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Library/Developer/Xcode/DerivedData/SignalVault-dodbjgflfhsjnfeecvceoukugsty/Build/Intermediates.noindex/SignalVault.build/Debug-iphonesimulator/SignalVault.build/DerivedSources/GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling Account.swift, MarketModels.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ MacroService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MacroService.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MacroService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MacroService.swift:29:17: warning: main actor-isolated property 'isYieldCurveInverted' can not be referenced on a nonisolated actor instance
+        if data.isYieldCurveInverted {
+                ^
+/Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/MarketModels.swift:130:9: note: property declared here
+    var isYieldCurveInverted: Bool {
+        ^
+
+SwiftDriverJobDiscovery normal arm64 Compiling SignalVaultApp.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ LiveMarketService.swift,\ MarketDataProvider.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/LiveMarketService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MarketDataProvider.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/LiveMarketService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MarketDataProvider.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling SentimentDashboardView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ TradeExecutor.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/TradeExecutor.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/TradeExecutor.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling MacroService.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ BankManager.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BankManager.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BankManager.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling GeneratedAssetSymbols.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ DisclaimerView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/DisclaimerView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/DisclaimerView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling LiveMarketService.swift, MarketDataProvider.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ ThetaDecayService.swift,\ HapticManager.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Simulation/ThetaDecayService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/UX/HapticManager.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Simulation/ThetaDecayService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/UX/HapticManager.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling TradeConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ PerformanceViewModel.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/PerformanceViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ViewModels/PerformanceViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling QuantEngine.swift, MarketChartViewModel.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ SentimentService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SentimentService.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SentimentService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling Position.swift, SchemaV1.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ SignalLog.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SignalLog.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Models/SignalLog.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal x86_64 Compiling DisclaimerView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ BacktestConsoleView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/BacktestConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/BacktestConsoleView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling BankManager.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ PerformanceDashboard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/PerformanceDashboard.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/PerformanceDashboard.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ MockMarketService.swift,\ RiskMonitorActor.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MockMarketService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Risk/RiskMonitorActor.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/MarketData/MockMarketService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/Risk/RiskMonitorActor.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling TradeExecutor.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ LivePositionsCard.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/LivePositionsCard.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/LivePositionsCard.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling SentimentService.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ SentimentDashboardView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/SentimentDashboardView.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Views/SentimentDashboardView.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling SignalLog.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 Compiling\ BacktestService.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BacktestService.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/BacktestService.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftDriverJobDiscovery normal arm64 Compiling ThetaDecayService.swift, HapticManager.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 Compiling\ SignalVaultApp.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVaultApp.swift (in target 'SignalVault' from project 'SignalVault')
+
+SwiftCompile normal x86_64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/SignalVaultApp.swift (in target 'SignalVault' from project 'SignalVault')
+    cd /Users/9lives/Documents/GitHub/Xcode/SignalVault
+    
+
+SwiftCompile normal arm64 Compiling\ SignalEngine.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/Services/SignalEngine.swift (in target 'SignalVault' from project 'SignalVault')
+
+** BUILD FAILED **
+
+
+The following build commands failed:
+	SwiftCompile normal arm64 Compiling\ ContentView.swift /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift (in target 'SignalVault' from project 'SignalVault')
+	SwiftCompile normal arm64 /Users/9lives/Documents/GitHub/Xcode/SignalVault/SignalVault/ContentView.swift (in target 'SignalVault' from project 'SignalVault')
+	Building project SignalVault with scheme SignalVault
+(3 failures)

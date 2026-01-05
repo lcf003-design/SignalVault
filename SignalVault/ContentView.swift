@@ -1,61 +1,263 @@
-//
-//  ContentView.swift
-//  SignalVault
-//
-//  Created by Larry Fields III on 1/5/26.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    
+    // Services injected from App
+    let marketService: MarketDataProvider
+    let riskMonitor: RiskMonitorActor? // Kept for reference if needed
+    
+    // ViewModels
+    @State private var chartViewModel: MarketChartViewModel
+    
+    init(marketService: MarketDataProvider = MockMarketService(), riskMonitor: RiskMonitorActor? = nil) {
+        self.marketService = marketService
+        self.riskMonitor = riskMonitor
+        // Initialize VM with shared service
+        _chartViewModel = State(initialValue: MarketChartViewModel(marketService: marketService))
+    }
+    
+    @Query private var accounts: [Account]
+    
+    // Legal Compliance (Mission 16)
+    @AppStorage("hasAcceptedRisk") private var hasAcceptedRisk = false
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false // Mission 17
+    
+    @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false
+    
+    @State private var showDisclaimer = false
+    @State private var showOnboarding = false
+    @State private var showBacktest = false
+    
+    // Mission 16: Macro State
+    @State private var macroData: MacroData?
+    @State private var currentRegime: MarketRegime = .neutral
+    private let macroService = MacroService()
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        TabView {
+            // Tab 1: Command Center
+            NavigationStack {
+                VStack(spacing: 0) {
+                    // Mission 16: Macro Status Bar
+                    if let data = macroData {
+                        MacroStatusBar(macroData: data, regime: currentRegime)
+                            .transition(.move(edge: .top))
+                    }
+                    
+                    // 1. Header & Net Worth
+                    VStack(spacing: 8) {
+                        Text("FAKE NET WORTH")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .tracking(2)
+                        
+                        if let account = accounts.first {
+                            Text(account.currentBalance, format: .currency(code: "USD"))
+                                .font(.system(size: 36, weight: .bold, design: .rounded))
+                                .foregroundStyle(Color.green)
+                                .contentTransition(.numericText())
+                        } else {
+                            Text("$0.00")
+                                .onAppear {
+                                    BankManager.shared.ensureAccountExists(modelContext: modelContext)
+                                }
+                        }
+                    }
+                    .padding(.top)
+                    
+                    // 2. Chart
+                    MarketChartView(viewModel: chartViewModel)
+                        .frame(maxHeight: 300)
+                        .padding(.vertical)
+                    
+                    // 3. Positions
+                    LivePositionsCard(currentPrice: chartViewModel.currentPrice)
+                    
+                    Spacer()
+                    
+                    // 4. Console
+                    TradeConsoleView(
+                        currentPrice: chartViewModel.currentPrice,
+                        activeSignal: chartViewModel.activeSignal,
+                        selectedSymbol: chartViewModel.selectedSymbol
+                    )
+                }
+                .navigationTitle("Command Center")
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    // Mission 11: Asset & Simulation Menu
+                    ToolbarItem(placement: .topBarLeading) {
+                        Menu {
+                            Section("Asset") {
+                                Button("Bitcoin (BTC)") { chartViewModel.changeSymbol(to: "BTC") }
+                                Button("Ethereum (ETH)") { chartViewModel.changeSymbol(to: "ETH") }
+                                Button("Solana (SOL)") { chartViewModel.changeSymbol(to: "SOL") }
+                                Button("S&P 500 (SPY)") { chartViewModel.changeSymbol(to: "SPY") }
+                            }
+                            
+                            Section("Simulation") {
+                                Toggle("Realistic Slippage (0.05%)", isOn: $isRealisticSlippageEnabled)
+                                
+                                Button {
+                                    showBacktest.toggle()
+                                } label: {
+                                    Label("Run Strategy Audit", systemImage: "clock.arrow.circlepath")
+                                }
+                                
+                                Button(role: .destructive) {
+                                    Task { @MainActor in
+                                        try? BankManager.shared.resetAccount(modelContext: modelContext)
+                                        HapticManager.shared.playSuccess()
+                                    }
+                                } label: {
+                                    Label("Reset Sandbox", systemImage: "trash")
+                                }
+                            }
+                            
+                            // Mission 17: Feedback
+                            Section("Beta Feedback") {
+                                Link(destination: URL(string: "mailto:support@signalvault.app?subject=SignalVault%20Feedback%20(v1.0.0)&body=Describe%20issue%20or%20feedback%20here...")!) {
+                                    Label("Report Bug / Feedback", systemImage: "ladybug")
+                                }
+                            }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text(chartViewModel.selectedSymbol)
+                                    .font(.headline)
+                                Image(systemName: "chevron.down.circle.fill")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            .foregroundStyle(.primary)
+                        }
+                    }
+                    
+                    ToolbarItem(placement: .topBarTrailing) {
+                         Button(action: {
+                             chartViewModel.toggleSimulation()
+                         }) {
+                             Image(systemName: chartViewModel.isRunning ? "pause.fill" : "play.fill")
+                                 .foregroundStyle(chartViewModel.isRunning ? .red : .orange)
+                         }
                     }
                 }
-                .onDelete(perform: deleteItems)
             }
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+            .tabItem {
+                Label("Trade", systemImage: "chart.bar.xaxis")
+            }
+            .sheet(isPresented: $showBacktest) {
+                BacktestConsoleView(symbol: chartViewModel.selectedSymbol)
+            }
+            // Initiation Logic
+            .onAppear {
+                // 1. Compliance Gate
+                if !hasAcceptedRisk {
+                    showDisclaimer = true
+                } else if !hasCompletedOnboarding {
+                    // 2. Onboarding Gate (only if disclaimer signed)
+                    showOnboarding = true
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
+                
+                // 3. Kickstart Services
+                Task {
+                    let data = await macroService.fetchMacroData()
+                    let regime = await macroService.determineRegime(data: data)
+                    withAnimation {
+                        self.macroData = data
+                        self.currentRegime = regime
                     }
+                    await chartViewModel.updateRegime(regime)
                 }
             }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
+            .onChange(of: hasAcceptedRisk) { oldValue, newValue in
+                if newValue && !hasCompletedOnboarding {
+                    showOnboarding = true
+                }
             }
+            
+            // Tab 2: Performance (The Mirror)
+            NavigationStack {
+                PerformanceDashboard()
+            }
+            .tabItem {
+                Label("Performance", systemImage: "timer")
+            }
+        }
+        .fullScreenCover(isPresented: $showDisclaimer) {
+            DisclaimerView(isPresented: $showDisclaimer)
+        }
+        .fullScreenCover(isPresented: $showOnboarding) {
+            OnboardingView(isPresented: Binding(
+                get: { showOnboarding },
+                set: { newValue in
+                    if !newValue { hasCompletedOnboarding = true }
+                    showOnboarding = newValue
+                }
+            ))
+        }
+    }
+}
+
+// Mission 16: UI Component (Moved here for build safety)
+struct MacroStatusBar: View {
+    let macroData: MacroData
+    let regime: MarketRegime
+    
+    var body: some View {
+        HStack {
+            // Regime Badge
+            HStack(spacing: 6) {
+                Circle()
+                    .fill(regimeColor)
+                    .frame(width: 8, height: 8)
+                Text(regime.rawValue)
+                    .font(.caption.bold())
+                    .foregroundStyle(regimeColor)
+            }
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(regimeColor.opacity(0.1))
+            .cornerRadius(8)
+            
+            Spacer()
+            
+            // Recession Warning (Yield Curve)
+            if macroData.isYieldCurveInverted {
+                HStack(spacing: 4) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                    Text("Inverted Yield Curve")
+                }
+                .font(.caption)
+                .foregroundStyle(.orange)
+            }
+            
+            Spacer()
+            
+            // Fed Meeting
+            HStack(spacing: 4) {
+                Image(systemName: "calendar")
+                Text("FOMC: \(macroData.nextFedMeeting, format: .dateTime.month().day())")
+            }
+            .font(.caption)
+            .foregroundStyle(.secondary)
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .background(Material.regular)
+    }
+    
+    var regimeColor: Color {
+        switch regime {
+        case .riskOn: return .green
+        case .riskOff: return .red
+        case .neutral: return .secondary
         }
     }
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    ContentView(marketService: MockMarketService())
+        .modelContainer(for: [Account.self, Position.self], inMemory: true)
 }
