@@ -128,7 +128,7 @@ struct MacroData: Sendable {
     let nextFedMeeting: Date
     let isYieldCurveInverted: Bool // Stored property
     
-    init(fedRate: Double, cpiYearly: Double, unemploymentRate: Double, treasury10Y: Double, treasury2Y: Double, nextFedMeeting: Date) {
+    nonisolated init(fedRate: Double, cpiYearly: Double, unemploymentRate: Double, treasury10Y: Double, treasury2Y: Double, nextFedMeeting: Date) {
         self.fedRate = fedRate
         self.cpiYearly = cpiYearly
         self.unemploymentRate = unemploymentRate

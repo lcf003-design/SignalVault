@@ -166,7 +166,8 @@ struct MarketChartView: View {
             }
             .frame(height: 250)
             .onAppear {
-                viewModel.start()
+                // Mission 17: User requested start in PAUSED state
+                // viewModel.start()
             }
             .onChange(of: viewModel.activeSignal) { oldSignal, newSignal in
                 if let new = newSignal, new != oldSignal {

@@ -1,6 +1,7 @@
 import Foundation
 import AVFoundation
 
+@MainActor
 class AudioService: NSObject {
     static let shared = AudioService()
     
