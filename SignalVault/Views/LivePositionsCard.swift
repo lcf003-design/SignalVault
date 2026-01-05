@@ -5,6 +5,9 @@ struct LivePositionsCard: View {
     @Query(sort: \Position.timestamp, order: .reverse) private var positions: [Position]
     var currentPrice: Double
     
+    @Environment(\.modelContext) private var modelContext
+    @State private var selectedPosition: Position?
+    
     var body: some View {
         VStack(alignment: .leading) {
             Text("LIVE POSITIONS")
@@ -23,10 +26,53 @@ struct LivePositionsCard: View {
                     } else {
                         ForEach(positions) { position in
                             PositionReviewCard(position: position, currentPrice: currentPrice)
+                                .contentShape(Rectangle()) // Standardize tap area
+                                .onTapGesture {
+                                    selectedPosition = position
+                                }
+                                .contextMenu {
+                                    // 1. Details
+                                    Button {
+                                        selectedPosition = position
+                                    } label: {
+                                        Label("View Details", systemImage: "chart.bar")
+                                    }
+                                    
+                                    // 2. Destructive Close
+                                    Button(role: .destructive) {
+                                        liquidatePosition(position)
+                                    } label: {
+                                        Label("Liquidate Position", systemImage: "trash")
+                                    }
+                                }
                         }
                     }
                 }
                 .padding(.horizontal)
+            }
+        }
+        .sheet(item: $selectedPosition) { position in
+            PositionDetailView(position: position)
+        }
+    }
+    
+    private func liquidatePosition(_ position: Position) {
+        // Haptic High-Stakes Feedback
+        let generator = UIImpactFeedbackGenerator(style: .heavy)
+        generator.impactOccurred()
+        
+        Task {
+            let container = modelContext.container
+            let executor = TradeExecutor(modelContainer: container)
+            
+            do {
+                try await executor.closePosition(
+                    positionID: position.id,
+                    price: currentPrice, // Note: Using the Dashboard's current price which might be cross-asset approximate
+                    reason: "Context Menu Close"
+                )
+            } catch {
+                print("Failed to liquidate: \(error)")
             }
         }
     }
