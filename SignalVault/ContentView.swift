@@ -1,61 +1,82 @@
-//
-//  ContentView.swift
-//  SignalVault
-//
-//  Created by Larry Fields III on 1/5/26.
-//
-
 import SwiftUI
 import SwiftData
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
-    @Query private var items: [Item]
-
+    
+    // Services injected from App
+    let marketService: MarketDataProvider
+    let riskMonitor: RiskMonitorActor? // Kept for reference if needed
+    
+    // ViewModels
+    @State private var chartViewModel: MarketChartViewModel
+    
+    init(marketService: MarketDataProvider = MockMarketService(), riskMonitor: RiskMonitorActor? = nil) {
+        self.marketService = marketService
+        self.riskMonitor = riskMonitor
+        // Initialize VM with shared service
+        _chartViewModel = State(initialValue: MarketChartViewModel(marketService: marketService))
+    }
+    
+    @Query private var accounts: [Account]
+    
     var body: some View {
-        NavigationSplitView {
-            List {
-                ForEach(items) { item in
-                    NavigationLink {
-                        Text("Item at \(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))")
-                    } label: {
-                        Text(item.timestamp, format: Date.FormatStyle(date: .numeric, time: .standard))
+        NavigationStack {
+            VStack(spacing: 0) {
+                // 1. Header & Net Worth
+                VStack(spacing: 8) {
+                    Text("FAKE NET WORTH")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .tracking(2)
+                    
+                    if let account = accounts.first {
+                        Text(account.currentBalance, format: .currency(code: "USD"))
+                            .font(.system(size: 36, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color.green)
+                            .contentTransition(.numericText())
+                    } else {
+                        Text("$0.00")
+                            .onAppear {
+                                BankManager.shared.ensureAccountExists(modelContext: modelContext)
+                            }
                     }
                 }
-                .onDelete(perform: deleteItems)
+                .padding(.top)
+                
+                // 2. Chart
+                MarketChartView(viewModel: chartViewModel)
+                    .frame(maxHeight: 300)
+                    .padding(.vertical)
+                
+                // 3. Positions
+                LivePositionsCard(currentPrice: chartViewModel.currentPrice)
+                
+                Spacer()
+                
+                // 4. Console
+                TradeConsoleView(
+                    currentPrice: chartViewModel.currentPrice,
+                    activeSignal: chartViewModel.activeSignal
+                )
             }
+            .navigationTitle("Command Center")
+            .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    EditButton()
+                ToolbarItem(placement: .topBarTrailing) {
+                     Button(action: {
+                         chartViewModel.toggleSimulation()
+                     }) {
+                         Image(systemName: chartViewModel.isRunning ? "pause.fill" : "play.fill")
+                             .foregroundStyle(chartViewModel.isRunning ? .red : .orange)
+                     }
                 }
-                ToolbarItem {
-                    Button(action: addItem) {
-                        Label("Add Item", systemImage: "plus")
-                    }
-                }
-            }
-        } detail: {
-            Text("Select an item")
-        }
-    }
-
-    private func addItem() {
-        withAnimation {
-            let newItem = Item(timestamp: Date())
-            modelContext.insert(newItem)
-        }
-    }
-
-    private func deleteItems(offsets: IndexSet) {
-        withAnimation {
-            for index in offsets {
-                modelContext.delete(items[index])
             }
         }
     }
 }
 
 #Preview {
-    ContentView()
-        .modelContainer(for: Item.self, inMemory: true)
+    ContentView(marketService: MockMarketService())
+        .modelContainer(for: [Account.self, Position.self], inMemory: true)
 }
