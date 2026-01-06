@@ -118,7 +118,7 @@ struct SettingsView: View {
                         Text("Version")
                         Spacer()
                         Text("1.0.0 (Build 1)")
-                            .foregroundStyle(.secondary)
+                        .foregroundStyle(.secondary)
                     }
                 }
             }
