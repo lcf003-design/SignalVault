@@ -1,5 +1,6 @@
 import SwiftUI
 import SwiftData
+import Combine
 
 struct ContentView: View {
     @Environment(\.modelContext) private var modelContext
@@ -54,7 +55,7 @@ struct ContentView: View {
                 VStack(spacing: 0) {
                     // Mission 16: Macro Status Bar
                     if let data = macroData {
-                        MacroStatusBar(macroData: data, regime: currentRegime)
+                        MacroStatusBar(macroData: data, regime: currentRegime, events: chartViewModel.economicEvents)
                             .transition(.move(edge: .top))
                     }
                     
@@ -104,7 +105,10 @@ struct ContentView: View {
                     TradeConsoleView(
                         currentPrice: chartViewModel.currentPrice,
                         activeSignal: chartViewModel.activeSignal,
-                        selectedSymbol: chartViewModel.selectedSymbol
+                        selectedSymbol: chartViewModel.selectedSymbol,
+                        vwap: chartViewModel.vwap,
+                        vwapDistance: chartViewModel.vwapDistance,
+                        isConsolidating: chartViewModel.isConsolidating
                     )
                 }
                 .navigationTitle("Command Center")
@@ -171,6 +175,7 @@ struct ContentView: View {
                         self.currentRegime = regime
                     }
                     await chartViewModel.updateRegime(regime)
+                    await chartViewModel.fetchEconomicEvents()
                 }
             }
             .onChange(of: hasAcceptedRisk) { oldValue, newValue in
@@ -181,21 +186,21 @@ struct ContentView: View {
             
             .tag(1) // Trade Tab
             
-            // Tab 3: Performance (The Mirror)
+            // Tab 3: Markets (Mission 19)
+            MarketsListView(selectedTab: $selectedTab, selectedSymbol: $chartViewModel.selectedSymbol)
+                .tabItem {
+                    Label("Markets", systemImage: "square.grid.2x2")
+                }
+                .tag(2)
+            
+            // Tab 4: Performance (The Mirror)
             NavigationStack {
                 PerformanceDashboard()
             }
             .tabItem {
                 Label("Performance", systemImage: "timer")
             }
-            .tag(2)
-            
-            // Tab 4: Markets (Mission 19)
-            MarketsListView(selectedTab: $selectedTab, selectedSymbol: $chartViewModel.selectedSymbol)
-                .tabItem {
-                    Label("Markets", systemImage: "square.grid.2x2")
-                }
-                .tag(3)
+            .tag(3)
             
             // Tab 5: Settings (Mission 20)
             SettingsView()
@@ -220,9 +225,17 @@ struct ContentView: View {
 }
 
 // Mission 16: UI Component (Moved here for build safety)
+
+
+// Mission 16 & 32: UI Component
 struct MacroStatusBar: View {
     let macroData: MacroData
     let regime: MarketRegime
+    // Mission 32: Next Event Countdown
+    var events: [EconomicEvent] = []
+    
+    @State private var timeRemaining: String = ""
+    private let timer = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
     
     var body: some View {
         HStack {
@@ -242,8 +255,23 @@ struct MacroStatusBar: View {
             
             Spacer()
             
-            // Recession Warning (Yield Curve)
-            if macroData.isYieldCurveInverted {
+            // Mission 32: Next Event Countdown
+            if let nextEvent = getNextEvent() {
+                 HStack(spacing: 4) {
+                     Image(systemName: "timer")
+                         .foregroundStyle(.orange)
+                     Text(nextEvent.title)
+                         .fontWeight(.semibold)
+                     Text(timeRemaining)
+                         .monospacedDigit()
+                 }
+                 .font(.caption)
+                 .foregroundStyle(.primary)
+                 .onReceive(timer) { _ in
+                     updateCountdown(to: nextEvent.date)
+                 }
+            } else if macroData.isYieldCurveInverted {
+                // Fallback to Yield Curve Warning if no imminent event
                 HStack(spacing: 4) {
                     Image(systemName: "exclamationmark.triangle.fill")
                     Text("Inverted Yield Curve")
@@ -272,6 +300,25 @@ struct MacroStatusBar: View {
         case .riskOn: return .green
         case .riskOff: return .red
         case .neutral: return .secondary
+        }
+    }
+    
+    func getNextEvent() -> EconomicEvent? {
+        let now = Date()
+        // Find first future event
+        return events.sorted(by: { $0.date < $1.date })
+            .first(where: { $0.date > now })
+    }
+    
+    func updateCountdown(to date: Date) {
+        let diff = date.timeIntervalSince(Date())
+        if diff > 0 {
+            let formatter = DateComponentsFormatter()
+            formatter.allowedUnits = [.hour, .minute, .second]
+            formatter.unitsStyle = .positional
+            timeRemaining = formatter.string(from: diff) ?? "00:00"
+        } else {
+            timeRemaining = "NOW"
         }
     }
 }

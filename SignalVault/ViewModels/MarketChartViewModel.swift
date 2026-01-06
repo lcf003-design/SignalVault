@@ -33,6 +33,21 @@ class MarketChartViewModel {
     // Mission 15: Sentiment State
     var sentiment: SentimentAnalysisResult?
     
+    // Mission 34: Sniper Scope State
+    var trendAlignment: TimeframeAlignment = .mixed
+    var divergenceAlert: Bool = false
+    
+    // Mission 36: VWAP State
+    var vwap: Double?
+    var vwapDistance: Double?
+    
+    // Mission 36 Part 2: ORB & Pivot State
+    var openingRangeHigh: Double?
+    var openingRangeLow: Double?
+    var yesterdayHigh: Double?
+    var yesterdayLow: Double?
+    var isConsolidating: Bool = false
+    
     // Config
     private let maxPoints = 500 // Limit for performance
     
@@ -98,25 +113,44 @@ class MarketChartViewModel {
                     self.ticks.removeFirst()
                 }
                 
-                // 2. Process Signal
-                if let newSignal = await engine.process(tick: tick) {
+                // 2. Process Signal (Mission 34: Context Aware)
+                let context = await self.engine.process(tick: tick)
+                
+                // Update Cloud
+                self.trendAlignment = context.alignment
+                self.divergenceAlert = context.isDivergenceDetected
+                
+                // Mission 36: Update VWAP & ORB
+                self.vwap = context.vwap
+                self.vwapDistance = context.vwapDistance
+                self.openingRangeHigh = context.openingRangeHigh
+                self.openingRangeLow = context.openingRangeLow
+                self.yesterdayHigh = context.yesterdayHigh
+                self.yesterdayLow = context.yesterdayLow
+                self.isConsolidating = context.isConsolidating
+                
+                if let newSignal = context.tradeSignal {
                     self.signals.append(newSignal)
                     self.activeSignal = newSignal
                     
-                    // Audio Announcement
+                    // Audio Announcement (Mission 34)
                     switch newSignal {
                     case .strongBuy, .strongSell:
                         AudioService.shared.announceSignal(symbol: tick.symbol, price: tick.price, signal: newSignal)
+                        
+                        // Sniper Sound?
+                        if context.alignment == .bullish || context.alignment == .bearish {
+                             // "SNIPER EXECUTION" sound
+                             AudioService.shared.playSniperSound()
+                             HapticManager.shared.playImpact()
+                        } else {
+                            // Standard Haptic
+                            let generator = UINotificationFeedbackGenerator()
+                            generator.notificationOccurred(.success)
+                        }
+                        
                     default:
                         break
-                    }
-                    
-                    // Trigger Haptics for new signal
-                    let generator = UINotificationFeedbackGenerator()
-                    switch newSignal {
-                    case .strongBuy, .strongSell:
-                        generator.notificationOccurred(.success)
-                    default: break
                     }
                     
                     // Auto-hide old signals from "Active" badge after 3 seconds
@@ -133,7 +167,7 @@ class MarketChartViewModel {
                 // Get last 50 points for regression
                 if self.ticks.count >= 30 {
                    let recentPrices = self.ticks.suffix(50).map { $0.price }
-                   let result = await projectionEngine.calculateProjection(recentPrices: recentPrices)
+                   let result = await self.projectionEngine.calculateProjection(recentPrices: recentPrices)
                    self.projection = result
                    
                    // Check for Price Stretched (Mean Reversion)
@@ -158,6 +192,10 @@ class MarketChartViewModel {
         dataTask = nil
     }
     
+    // Mission 32: Economic Events
+    var economicEvents: [EconomicEvent] = []
+    private let macroService = MacroService()
+    
     // Mission 15: Sentiment Integration
     func fetchSentiment() async {
         let result = await sentimentService.fetchSentiment(for: selectedSymbol)
@@ -165,8 +203,14 @@ class MarketChartViewModel {
         await engine.updateSentiment(result)
     }
     
-    // Mission 16: Macro Integration
+    // Mission 16 & 32: Macro Integration
     func updateRegime(_ regime: MarketRegime) async {
         await engine.updateRegime(regime)
+    }
+    
+    func fetchEconomicEvents() async {
+        let events = await macroService.fetchEconomicEvents()
+        self.economicEvents = events
+        await engine.updateEvents(events)
     }
 }

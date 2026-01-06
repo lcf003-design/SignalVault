@@ -41,14 +41,24 @@ class AudioService: NSObject {
         } else {
             direction = "Strong Sell"
         }
-        // "High Conviction Buy Signal for BTC at ninety-six thousand..."
-        // Format price to be speakable? Default formatter is usually okay but might say "dollars".
-        // Let's rely on AVSpeech default number handling, or simple string.
         
-        let priceString = String(format: "%.0f", price) // Speak whole numbers for clarity on high value crypto?
-        // Or "at 96400"
-        
+        let priceString = String(format: "%.0f", price)
         let text = "\(direction) Signal for \(symbol) at \(priceString)"
         announce(text: text)
+    }
+    
+    // Mission 34: Sniper Sound
+    func playSniperSound() {
+        guard isEnabled else { return }
+        // "Target Acquired" in a deeper, more robotic voice would be cool.
+        // For now, AVSpeech with adjusted pitch.
+        
+        let utterance = AVSpeechUtterance(string: "Target Acquired. Execution Imminent.")
+        utterance.voice = AVSpeechSynthesisVoice(language: "en-GB") // British accent sounds more... tactical?
+        utterance.rate = 0.45
+        utterance.pitchMultiplier = 0.8 // Deeper
+        utterance.volume = 1.0
+        
+        synthesizer.speak(utterance)
     }
 }

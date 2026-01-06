@@ -4,93 +4,135 @@ struct MarketsListView: View {
     @Binding var selectedTab: Int
     @Binding var selectedSymbol: String
     
-    // Mock Data Source for list
-    let assets = [
-        MarketAsset(symbol: "BTC", name: "Bitcoin", price: 96500.0, change: 2.4),
-        MarketAsset(symbol: "ETH", name: "Ethereum", price: 3450.0, change: -1.2),
-        MarketAsset(symbol: "SOL", name: "Solana", price: 145.0, change: 5.6),
-        MarketAsset(symbol: "SPY", name: "S&P 500", price: 540.0, change: 0.5),
-        MarketAsset(symbol: "NVDA", name: "NVIDIA", price: 125.0, change: 1.8),
-        MarketAsset(symbol: "AAPL", name: "Apple", price: 210.0, change: -0.3)
-    ]
-    
-    // Services
-    private let marketService = MockMarketService() // Lightweight instance for sparklines
-    private let engine = SignalEngine() // For signal dots
+    // Mission 33: Connected to the Scanner
+    @StateObject private var scanner = MarketScannerService()
     
     var body: some View {
         NavigationStack {
-            List(assets) { asset in
-                Button(action: {
-                    // Navigation Logic
-                    selectedSymbol = asset.symbol
-                    selectedTab = 0 // Switch to Trade Tab
-                }) {
-                    HStack {
-                        // 1. Symbol & Name
-                        VStack(alignment: .leading) {
-                            HStack {
-                                Text(asset.symbol)
-                                    .font(.headline)
-                                    .fontWeight(.bold)
-                                
-                                // Signal Dot (Mocked logic for demo)
-                                if asset.change > 2.0 {
-                                    Circle()
-                                        .fill(Color.green)
-                                        .frame(width: 8, height: 8)
-                                } else if asset.change < -1.0 {
-                                    Circle()
-                                        .fill(Color.red)
-                                        .frame(width: 8, height: 8)
-                                }
-                            }
-                            
-                            Text(asset.name)
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                        // 2. Sparkline
-                        SparklineGraph(
-                            data: marketService.generateStaticHistory(symbol: asset.symbol),
-                            color: asset.change >= 0 ? .green : .red
-                        )
-                        .frame(width: 80, height: 30)
+            VStack {
+                // Mission 35: Discovery Carousel
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Top AI Picks")
+                        .font(.title3.bold())
                         .padding(.horizontal)
-                        
-                        Spacer()
-                        
-                        // 3. Price & Change
-                        VStack(alignment: .trailing) {
-                            Text(asset.price, format: .currency(code: "USD"))
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                            
-                            Text("\(asset.change > 0 ? "+" : "")\(String(format: "%.2f", asset.change))%")
-                                .font(.caption)
-                                .foregroundStyle(asset.change >= 0 ? .green : .red)
-                                .padding(4)
-                                .background(
-                                    (asset.change >= 0 ? Color.green : Color.red).opacity(0.1)
-                                )
-                                .cornerRadius(4)
+                    
+                    DiscoveryCarousel(assets: scanner.assets.sorted { $0.kaiScore > $1.kaiScore })
+                }
+                .padding(.top)
+
+                // Mission 35: Filter Chips
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack {
+                        ForEach(Filter.allCases, id: \.self) { filter in
+                            Button(action: { selectedFilter = filter }) {
+                                Text(filter.rawValue)
+                                    .font(.subheadline.bold())
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 8)
+                                    .background(selectedFilter == filter ? Color.blue : Color(uiColor: .secondarySystemBackground))
+                                    .foregroundStyle(selectedFilter == filter ? .white : .primary)
+                                    .clipShape(Capsule())
+                            }
                         }
                     }
-                    .padding(.vertical, 4)
+                    .padding(.horizontal)
                 }
-                .buttonStyle(.plain) // Remove default list button styling
+                .padding(.vertical, 8)
+
+                // The List (Filtered)
+                List(filteredAssets) { asset in
+                    Button(action: {
+                        selectedSymbol = asset.symbol
+                        selectedTab = 0
+                    }) {
+                        HStack {
+                            // 1. Symbol & Signal Ring
+                            ZStack {
+                                Circle()
+                                    .strokeBorder(Color.gray.opacity(0.2), lineWidth: 3)
+                                    .frame(width: 44, height: 44)
+                                
+                                // Kai Score Ring
+                                Circle()
+                                    .trim(from: 0, to: Double(asset.kaiScore) / 100.0)
+                                    .stroke(
+                                        asset.signalColor == "green" ? Color.green : (asset.signalColor == "red" ? Color.red : Color.gray),
+                                        style: StrokeStyle(lineWidth: 3, lineCap: .round)
+                                    )
+                                    .rotationEffect(.degrees(-90))
+                                    .frame(width: 44, height: 44)
+                                    .shadow(color: asset.isGlowing ? (asset.signalType.isBuy ? .green : .red) : .clear, radius: 5)
+                                
+                                Text("\(asset.kaiScore)")
+                                    .font(.caption.bold())
+                                    .monospacedDigit()
+                            }
+                            
+                            VStack(alignment: .leading) {
+                                Text(asset.symbol)
+                                    .font(.headline)
+                                Text(asset.name)
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                            
+                            Spacer()
+                            
+                            VStack(alignment: .trailing) {
+                                Text(asset.price, format: .currency(code: "USD"))
+                                    .fontWeight(.medium)
+                                Text("\(asset.changePercent > 0 ? "+" : "")\(String(format: "%.2f", asset.changePercent))%")
+                                    .font(.caption)
+                                    .foregroundStyle(asset.changePercent >= 0 ? .green : .red)
+                            }
+                        }
+                        .padding(.vertical, 4)
+                        .contentShape(Rectangle()) // Hit testing
+                    }
+                    .buttonStyle(.plain)
+                }
+                .listStyle(.insetGrouped)
             }
-            .navigationTitle("Markets")
-            .listStyle(.insetGrouped)
+            .navigationTitle("AI Market Pulse")
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color.green)
+                            .frame(width: 6, height: 6)
+                            .opacity(Double(Int(Date().timeIntervalSince1970) % 2 == 0 ? 1 : 0))
+                            .animation(.easeInOut(duration: 0.5).repeatForever(), value: true)
+                        Text("LIVE")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            .onAppear {
+                scanner.startScanning()
+            }
+            .onDisappear {
+                scanner.stopScanning()
+            }
         }
     }
-}
-
-struct MarketAsset: Identifiable {
-    let id = UUID()
-    let symbol: String
-    let name: String
-    let price: Double
-    let change: Double
+    
+    // Mission 35: Filters
+    @State private var selectedFilter: Filter = .all
+    
+    enum Filter: String, CaseIterable {
+        case all = "All Assets"
+        case crypto = "Crypto"
+        case stocks = "Stocks"
+        case highVol = "High Vol"
+    }
+    
+    var filteredAssets: [ScannedAsset] {
+        switch selectedFilter {
+        case .all: return scanner.assets
+        case .crypto: return scanner.assets.filter { $0.assetType == .crypto }
+        case .stocks: return scanner.assets.filter { $0.assetType == .stock }
+        case .highVol: return scanner.assets.filter { $0.volumeStatus == .high || $0.volumeStatus == .ultra }
+        }
+    }
 }

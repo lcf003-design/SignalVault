@@ -9,62 +9,98 @@ struct PortfolioSummaryView: View {
     
     var body: some View {
         NavigationStack {
-            ScrollView {
+            ScrollView(showsIndicators: false) {
                 VStack(spacing: 24) {
-                    // 1. Hero Header
-                    VStack(spacing: 8) {
-                        Text("TOTAL EQUITY")
-                            .font(.caption)
-                            .fontWeight(.bold)
-                            .foregroundStyle(.secondary)
-                            .tracking(2)
-                        
-                        Text(viewModel.totalEquity, format: .currency(code: "USD"))
-                            .font(.system(size: 42, weight: .heavy, design: .rounded))
-                            .foregroundStyle(Material.thickMaterial)
+                    
+                    // 1. Hero Header (Mesh Gradient)
+                    ZStack {
+                        // Mesh Gradient Simulation
+                        LinearGradient(colors: [.indigo, .purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing)
+                            .mask(RoundedRectangle(cornerRadius: 24))
                             .overlay(
-                                LinearGradient(
-                                    colors: [.purple, .blue],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                                .mask(
-                                    Text(viewModel.totalEquity, format: .currency(code: "USD"))
-                                        .font(.system(size: 42, weight: .heavy, design: .rounded))
-                                )
+                                Circle()
+                                    .fill(.blue.opacity(0.4))
+                                    .frame(width: 200)
+                                    .blur(radius: 50)
+                                    .offset(x: -50, y: -50)
+                            )
+                            .overlay(
+                                Circle()
+                                    .fill(.purple.opacity(0.4))
+                                    .frame(width: 200)
+                                    .blur(radius: 50)
+                                    .offset(x: 50, y: 50)
                             )
                         
-                        // Total Open P&L
-                        HStack(spacing: 4) {
-                            Image(systemName: viewModel.totalPnL >= 0 ? "arrow.up.right" : "arrow.down.right")
-                            Text(viewModel.totalPnL, format: .currency(code: "USD"))
-                            Text("Open P&L")
-                                .foregroundStyle(.secondary)
+                        VStack(spacing: 4) {
+                            Text("TOTAL EQUITY")
+                                .font(.caption2)
+                                .fontWeight(.bold)
+                                .foregroundStyle(.white.opacity(0.7))
+                                .tracking(2)
+                            
+                            Text(viewModel.totalEquity, format: .currency(code: "USD"))
+                                .font(.system(size: 40, weight: .heavy, design: .rounded))
+                                .foregroundStyle(.white)
+                                .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
                         }
-                        .font(.subheadline)
-                        .fontWeight(.medium)
-                        .foregroundStyle(viewModel.totalPnL >= 0 ? .green : .red)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(Color(uiColor: .secondarySystemBackground))
-                        .cornerRadius(20)
+                        .padding(.vertical, 40)
                     }
-                    .padding(.top, 20)
+                    .frame(height: 180)
+                    .padding(.horizontal)
                     
-                    // 2. Asset Allocation (Donut Chart)
-                    VStack(alignment: .leading) {
-                        Text("Allocation")
+                    // 2. Alpha Comparison Card
+                    DailyAlphaCard(userPL: viewModel.totalPnL, aiPL: viewModel.aiDailyPL)
+                        .padding(.horizontal)
+                        
+                    // 3. Alpha Ticker
+                    AlphaTickerView(signals: viewModel.scannerSignals)
+                    
+                    // 4. Risk & Discipline Hub
+                    VStack(alignment: .leading, spacing: 16) {
+                        Text("Risk & Discipline")
                             .font(.headline)
                             .padding(.horizontal)
                         
-                        if viewModel.allocationData.isEmpty {
-                            Text("No Assets Found")
-                                .frame(height: 200)
-                                .frame(maxWidth: .infinity)
-                                .background(Color(uiColor: .secondarySystemBackground))
-                                .cornerRadius(16)
+                        HStack(spacing: 16) {
+                            // Risk Meter
+                            VStack(alignment: .leading) {
+                                Text("VaR Score")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("\(viewModel.riskScore)/100")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(riskColor)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(uiColor: .secondarySystemBackground))
+                            .cornerRadius(16)
+                            
+                            // Discipline Meter
+                            VStack(alignment: .leading) {
+                                Text("Discipline")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                                Text("\(viewModel.disciplineRating)%")
+                                    .font(.title2.bold())
+                                    .foregroundStyle(viewModel.disciplineRating > 90 ? .green : .orange)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .padding()
+                            .background(Color(uiColor: .secondarySystemBackground))
+                            .cornerRadius(16)
+                        }
+                        .padding(.horizontal)
+                    }
+                    
+                    // 5. Allocation (Donut Chart)
+                    if !viewModel.allocationData.isEmpty {
+                        VStack(alignment: .leading) {
+                            Text("Allocation")
+                                .font(.headline)
                                 .padding(.horizontal)
-                        } else {
+                            
                             Chart(viewModel.allocationData) { segment in
                                 SectorMark(
                                     angle: .value("Value", segment.value),
@@ -74,88 +110,53 @@ struct PortfolioSummaryView: View {
                                 .cornerRadius(5)
                                 .foregroundStyle(segment.color)
                             }
-                            .frame(height: 250)
+                            .frame(height: 200)
                             .padding()
-                            
-                            // Legend
-                            HStack {
-                                ForEach(viewModel.allocationData) { segment in
-                                    HStack(spacing: 4) {
-                                        Circle()
-                                            .fill(segment.color)
-                                            .frame(width: 8, height: 8)
-                                        Text(segment.sector)
-                                            .font(.caption)
-                                            .foregroundStyle(.secondary)
-                                    }
-                                }
-                            }
-                            .frame(maxWidth: .infinity)
                         }
                     }
                     
-                    // 3. Risk Meter
-                    VStack(alignment: .leading) {
-                        HStack {
-                            Text("Risk Score (VaR)")
+                    // 6. Portfolio News Pulse
+                    if !viewModel.portfolioNews.isEmpty {
+                        VStack(alignment: .leading) {
+                            Text("Portfolio Pulse")
                                 .font(.headline)
-                            Spacer()
-                            Text("\(viewModel.riskScore)/100")
-                                .fontWeight(.bold)
-                                .foregroundStyle(riskColor)
-                        }
-                        .padding(.horizontal)
-                        
-                        // Meter Bar
-                        GeometryReader { geo in
-                            ZStack(alignment: .leading) {
-                                Capsule()
-                                    .fill(Color(uiColor: .secondarySystemBackground))
-                                    .frame(height: 12)
-                                
-                                Capsule()
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [.green, .yellow, .red],
-                                            startPoint: .leading,
-                                            endPoint: .trailing
-                                        )
-                                    )
-                                    .frame(width: geo.size.width * (Double(viewModel.riskScore) / 100.0), height: 12)
+                                .padding(.horizontal)
+                            
+                            ForEach(viewModel.portfolioNews.prefix(3)) { news in
+                                HStack {
+                                    VStack(alignment: .leading) {
+                                        Text(news.source)
+                                            .font(.caption2.bold())
+                                            .foregroundStyle(.secondary)
+                                        Text(news.headline)
+                                            .font(.caption)
+                                            .fontWeight(.medium)
+                                            .lineLimit(2)
+                                    }
+                                    Spacer()
+                                    Text(news.sentimentScore > 0 ? "BULL" : "BEAR")
+                                        .font(.caption2.bold())
+                                        .padding(4)
+                                        .background(news.sentimentScore > 0 ? Color.green.opacity(0.1) : Color.red.opacity(0.1))
+                                        .foregroundStyle(news.sentimentScore > 0 ? .green : .red)
+                                        .cornerRadius(4)
+                                }
+                                .padding()
+                                .background(Color(uiColor: .secondarySystemBackground))
+                                .cornerRadius(12)
+                                .padding(.horizontal)
                             }
                         }
-                        .frame(height: 12)
-                        .padding(.horizontal)
-                        
-                        Text(riskDescription)
-                            .font(.caption)
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal)
                     }
-                    .padding(.vertical)
-                    
-                    // 4. Quick Actions
-                    Button(action: { selectedTab = 1 }) { // Jump to Trade
-                        HStack {
-                            Image(systemName: "bolt.fill")
-                            Text("Go to Command Center")
-                        }
-                        .fontWeight(.bold)
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding()
-                        .background(Color.blue)
-                        .cornerRadius(16)
-                    }
-                    .padding(.horizontal)
-                    
-                    Spacer()
+
+                    Spacer(minLength: 50)
                 }
-                .navigationTitle("Home")
+                .navigationTitle("Command Center")
                 .navigationBarHidden(true)
             }
-            .onAppear {
+            .task {
                 viewModel.setContext(modelContext)
+                await viewModel.refreshViewData()
             }
         }
     }
@@ -165,10 +166,131 @@ struct PortfolioSummaryView: View {
         else if viewModel.riskScore < 70 { return .yellow }
         else { return .red }
     }
-    
+
     var riskDescription: String {
         if viewModel.riskScore < 30 { return "Conservative Allocation. Mostly Cash or Blue Chips." }
         else if viewModel.riskScore < 70 { return "Balanced Portfolio. Healthy Mix." }
         else { return "High Volatility detected. Significant Crypto exposure." }
+    }
+}
+
+
+
+// MARK: - Mission 37: Alpha Components
+
+struct DailyAlphaCard: View {
+    let userPL: Double
+    let aiPL: Double
+    
+    var alpha: Double { userPL - aiPL }
+    
+    var body: some View {
+        HStack(spacing: 0) {
+            // User Side
+            VStack(alignment: .leading) {
+                Text("USER P&L")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.secondary)
+                Text(userPL, format: .currency(code: "USD"))
+                    .font(.title3.bold())
+                    .foregroundStyle(userPL >= 0 ? .green : .red)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+            
+            Divider()
+                .frame(height: 40)
+            
+            // AI Side
+            VStack(alignment: .leading) {
+                Text("AI ALPHA")
+                    .font(.caption2.bold())
+                    .foregroundStyle(.purple)
+                Text(aiPL, format: .currency(code: "USD"))
+                    .font(.title3.bold())
+                    .foregroundStyle(.purple)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding()
+        }
+        .background(Color(uiColor: .tertiarySystemBackground))
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(alpha >= 0 ? Color.green.opacity(0.3) : Color.purple.opacity(0.3), lineWidth: 1)
+        )
+        // Alpha Badge
+        .overlay(
+            Text(alpha >= 0 ? "BEATING AI" : "LAGGING AI")
+                .font(.system(size: 8, weight: .black))
+                .padding(4)
+                .background(alpha >= 0 ? Color.green : Color.purple)
+                .foregroundStyle(.white)
+                .cornerRadius(4)
+                .offset(y: -10),
+            alignment: .top
+        )
+    }
+}
+
+struct AlphaTickerView: View {
+    let signals: [ScannedAsset]
+    
+    var body: some View {
+        VStack(alignment: .leading) {
+            Text("Scanner Alpha")
+                .font(.headline)
+                .padding(.horizontal)
+            
+            ScrollView(.horizontal, showsIndicators: false) {
+                LazyHStack(spacing: 12) {
+                    ForEach(signals) { signal in
+                        AlphaTickerCell(signal: signal)
+                    }
+                }
+                .padding(.horizontal)
+            }
+        }
+    }
+}
+
+struct AlphaTickerCell: View {
+    let signal: ScannedAsset
+    
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                Text(signal.symbol)
+                    .font(.caption.bold())
+                
+                Spacer()
+                
+                Text("\(signal.kaiScore)")
+                    .font(.caption2.bold())
+                    .padding(2)
+                    .background(.white.opacity(0.2))
+                    .cornerRadius(4)
+            }
+            
+            Text(signal.signalType.isBuy ? "STRONG BUY" : "NEUTRAL")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(signal.signalType.isBuy ? .black : .white)
+                .padding(2)
+                .background(signal.signalType.isBuy ? Color.green : Color.gray)
+                .cornerRadius(2)
+            
+            Text(signal.aiSummary)
+                .font(.system(size: 8))
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
+        .padding(8)
+        .frame(width: 120, height: 70)
+        .background(Color(uiColor: .secondarySystemBackground))
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(signal.isGlowing ? Color.purple : Color.clear, lineWidth: 1)
+        )
     }
 }

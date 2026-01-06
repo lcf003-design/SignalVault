@@ -41,4 +41,47 @@ actor MacroService {
         
         return .neutral
     }
+    // Mission 32: Economic Calendar
+    func fetchEconomicEvents() -> [EconomicEvent] {
+         let now = Date()
+         
+         // Mock Events for Demo
+         return [
+             EconomicEvent(
+                 title: "NFP (Non-Farm Payrolls)",
+                 impact: .high,
+                 date: now.addingTimeInterval(45 * 60) // 45 mins from now (triggers warning)
+             ),
+             EconomicEvent(
+                 title: "FOMC Minutes",
+                 impact: .high,
+                 date: now.addingTimeInterval(3600 * 24 * 2) // 2 days
+             ),
+             EconomicEvent(
+                 title: "CPI Release",
+                 impact: .medium,
+                 date: now.addingTimeInterval(3600 * 5) // 5 hours
+             )
+         ]
+    }
 }
+
+struct EconomicEvent: Identifiable, Hashable, Sendable {
+    let id = UUID()
+    let title: String
+    let impact: EventImpact
+    let date: Date
+    
+    enum EventImpact: String, Sendable {
+        case high, medium, low
+        
+        var color: String {
+            switch self {
+            case .high: return "red"
+            case .medium: return "orange"
+            case .low: return "yellow"
+            }
+        }
+    }
+}
+

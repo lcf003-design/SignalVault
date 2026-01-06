@@ -16,28 +16,61 @@ struct MarketChartView: View {
     
     @State private var flashColor: Color?
     
+    // Mission 34: Trend Cloud Colors
+    private var cloudColor: Color {
+        switch viewModel.trendAlignment {
+        case .bullish: return .green.opacity(0.15)
+        case .bearish: return .red.opacity(0.15)
+        case .mixed: return .yellow.opacity(0.1)
+        }
+    }
+    
     var body: some View {
         VStack {
             // Header
-            HStack(alignment: .lastTextBaseline) {
-                Text(viewModel.currentPrice, format: .currency(code: "USD"))
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .contentTransition(.numericText())
-                
-                if let tick = viewModel.ticks.last {
-                   Text(tick.timestamp, style: .time)
-                        .foregroundStyle(.secondary)
-                        .font(.caption)
+            VStack {
+                 // Mission 34: Divergence Alert Banner
+                if viewModel.divergenceAlert {
+                    HStack {
+                         Image(systemName: "exclamationmark.triangle.fill")
+                             .foregroundStyle(.yellow)
+                        Text("BEARISH DIVERGENCE: Potential Reversal")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.yellow)
+                    }
+                    .padding(4)
+                    .background(Color.yellow.opacity(0.1))
+                    .cornerRadius(4)
                 }
                 
-                Spacer()
-                
-                if let signal = viewModel.activeSignal {
-                    SignalBadge(signal: signal)
+                HStack(alignment: .lastTextBaseline) {
+                    Text(viewModel.currentPrice, format: .currency(code: "USD"))
+                        .font(.system(size: 32, weight: .bold, design: .rounded))
+                        .foregroundStyle(.primary)
+                        .contentTransition(.numericText())
+                    
+                    if let tick = viewModel.ticks.last {
+                       Text(tick.timestamp, style: .time)
+                            .foregroundStyle(.secondary)
+                            .font(.caption)
+                    }
+                    
+                    Spacer()
+                    
+                    if let signal = viewModel.activeSignal {
+                        SignalBadge(signal: signal)
+                    } else {
+                        // Show Trend Status if no active signal
+                        Text(viewModel.trendAlignment.rawValue.uppercased())
+                            .font(.caption2.bold())
+                            .foregroundStyle(Color(viewModel.trendAlignment.colorName))
+                    }
                 }
             }
             .padding(.horizontal)
+            .padding(.top, 4)
+            .background(cloudColor.blur(radius: 20)) // Subtle background glow (Trend Cloud)
+
             
             // Chart
             Chart {
@@ -150,12 +183,97 @@ struct MarketChartView: View {
                         }
                 }
                 
+                // Mission 36: Institutional VWAP Line
+                if let vwap = viewModel.vwap {
+                    RuleMark(y: .value("VWAP", vwap))
+                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
+                        .foregroundStyle(.cyan.opacity(0.8))
+                        .annotation(position: .trailing, alignment: .center) {
+                            Text("VWAP")
+                                .font(.caption2.bold())
+                                .foregroundStyle(.cyan)
+                                .padding(4)
+                                .background(.ultraThinMaterial)
+                                .cornerRadius(4)
+                        }
+                }
+                
+                // Mission 36 Part 2: ORB Lines & Shading
+                if let orbH = viewModel.openingRangeHigh, let orbL = viewModel.openingRangeLow {
+                    // Shading (Opening 15 mins)
+                    if let start = viewModel.ticks.first?.timestamp {
+                         RectangleMark(
+                             xStart: .value("ORB Start", start),
+                             xEnd: .value("ORB End", start.addingTimeInterval(900)),
+                             yStart: .value("High", orbH),
+                             yEnd: .value("Low", orbL)
+                         )
+                         .foregroundStyle(.gray.opacity(0.1))
+                    }
+                    
+                    // High Line
+                    RuleMark(y: .value("ORB High", orbH))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
+                        .foregroundStyle(.gray)
+                        .annotation(position: .leading) {
+                            Text("ORB H")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                        
+                    // Low Line
+                    RuleMark(y: .value("ORB Low", orbL))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
+                        .foregroundStyle(.gray)
+                        .annotation(position: .leading) {
+                            Text("ORB L")
+                                .font(.caption2)
+                                .foregroundStyle(.secondary)
+                        }
+                }
+                
+                // Session Pivots (YH/YL)
+                if let yh = viewModel.yesterdayHigh {
+                    RuleMark(y: .value("YH", yh))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .annotation(position: .trailing) { Text("YH").font(.caption2).foregroundStyle(.secondary) }
+                }
+                if let yl = viewModel.yesterdayLow {
+                    RuleMark(y: .value("YL", yl))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
+                        .foregroundStyle(.white.opacity(0.6))
+                        .annotation(position: .trailing) { Text("YL").font(.caption2).foregroundStyle(.secondary) }
+                }
+                
+                // Mission 32: Economic Event Markers
+                ForEach(viewModel.economicEvents) { event in
+                    RuleMark(x: .value("Event", event.date))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
+                        .foregroundStyle(Color(event.impact.color))
+                        .annotation(position: .top, alignment: .center) {
+                            VStack(spacing: 2) {
+                                Image(systemName: "calendar.badge.exclamationmark")
+                                    .foregroundStyle(.white)
+                                    .font(.caption2)
+                                Text(event.title)
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.white)
+                                    .multilineTextAlignment(.center)
+                            }
+                            .padding(4)
+                            .background(Color(event.impact.color).gradient)
+                            .cornerRadius(4)
+                            .shadow(radius: 2)
+                        }
+                }
+                
                 // Mission 8: Flash Alert Overlay
                 if let signal = viewModel.activeSignal {
                      RuleMark(y: .value("Flash", 0)) // Hidden Anchor
                          .annotation(position: .overlay) {
                              RoundedRectangle(cornerRadius: 0)
-                                 .strokeBorder(signal.color, lineWidth: flashColor != nil ? 4 : 0)
+                                 .strokeBorder(getSignalColor(signal), lineWidth: flashColor != nil ? 4 : 0)
                                  .ignoresSafeArea()
                                  .opacity(flashColor != nil ? 1.0 : 0.0)
                                  .animation(.easeInOut(duration: 0.2), value: flashColor)
@@ -378,23 +496,20 @@ struct MarketChartView: View {
         
         return (lower - padding)...(upper + padding)
     }
-}
-
-// Helper Extension
-extension TradeSignal {
-    var isBuy: Bool {
-        if case .strongBuy = self { return true }
-        return false
-    }
     
-    var color: Color {
-        switch self {
+    private func getSignalColor(_ signal: TradeSignal) -> Color {
+        switch signal {
         case .strongBuy: return .green
         case .strongSell: return .red
-        case .neutral: return .clear
+        default: return .gray
         }
     }
 }
+
+// Helper Extension
+// Removed extension to prevent MainActor isolation leakage to Model
+// extension TradeSignal { var color: Color ... }
+
 
 struct SignalBadge: View {
     let signal: TradeSignal

@@ -43,8 +43,8 @@ actor BacktestService {
         let slPercent = 0.01
         
         for tick in history {
-            // Process Tick
-            let signal = await engine.process(tick: tick)
+            // Process Tick (Mission 34: SignalContext)
+            let context = await engine.process(tick: tick)
             
             // Manage Active Position
             if let trade = activeTrade {
@@ -90,8 +90,8 @@ actor BacktestService {
                 }
                 
             } else {
-                // Check Entry
-                if let sig = signal, case .strongBuy = sig {
+                // Check Entry (Mission 34: Use Context)
+                if let sig = context.tradeSignal, case .strongBuy = sig {
                     let quantity = balance / tick.price
                     activeTrade = (entry: tick.price, isLong: true, date: tick.timestamp, size: quantity)
                 }

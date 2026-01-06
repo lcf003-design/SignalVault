@@ -11,6 +11,11 @@ struct TradeConsoleView: View {
     var activeSignal: TradeSignal?
     var selectedSymbol: String // Mission 11
     
+    // Mission 36: VWAP Display
+    var vwap: Double?
+    var vwapDistance: Double?
+    var isConsolidating: Bool = false // Mission 36.2
+    
     // Mission 21: Smart Order Entry State
     enum OrderMode: String, CaseIterable {
         case shares = "Shares"
@@ -23,6 +28,37 @@ struct TradeConsoleView: View {
     
     var body: some View {
         VStack(spacing: 12) {
+            
+            // Mission 36: VWAP Status Line
+            if let vwap = vwap, let dist = vwapDistance {
+                HStack(spacing: 12) {
+                    Text("VWAP: \(vwap, format: .currency(code: "USD"))")
+                         .font(.caption2.monospaced())
+                         .foregroundStyle(.cyan)
+                    
+                    // Show warning if extended > 3%
+                    if abs(dist) > 0.03 {
+                         HStack(spacing: 4) {
+                             Image(systemName: "exclamationmark.triangle.fill")
+                             Text("OVEREXTENDED: \(dist * 100, format: .number.precision(.fractionLength(1)))%")
+                         }
+                         .font(.caption2.bold())
+                         .foregroundStyle(.orange)
+                         // Pulse animation could be here
+                    } else if isConsolidating {
+                        // Mission 36.2: Consolidation Msg
+                         Text("Awaiting ORB Breakout")
+                            .font(.caption2.bold())
+                            .foregroundStyle(.yellow)
+                    } else {
+                         Text("OSC: \(dist * 100, format: .number.precision(.fractionLength(2)))%")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.top, 4)
+            }
+            
             Divider()
             
             // 1. Order Entry Controls
@@ -78,6 +114,15 @@ struct TradeConsoleView: View {
                 // Status Badge
                 if let signal = activeSignal {
                     SignalBadge(signal: signal)
+                } else if isConsolidating {
+                    // Mission 36.2: Status
+                    Text("CONSOLIDATING")
+                        .font(.caption.bold())
+                        .foregroundStyle(.yellow)
+                        .padding(.horizontal, 8)
+                        .padding(.vertical, 4)
+                        .background(Color.yellow.opacity(0.1))
+                        .clipShape(Capsule())
                 } else {
                     Text("SCANNING \(selectedSymbol)...")
                         .font(.caption.bold())
@@ -109,6 +154,9 @@ struct TradeConsoleView: View {
                                             .opacity(0.9)
                                     }
                                 }
+                            } else if isConsolidating {
+                                Text("AWAITING BREAKOUT")
+                                    .fontWeight(.bold)
                             } else {
                                 Text("AWAITING SIGNAL...")
                                     .fontWeight(.bold)

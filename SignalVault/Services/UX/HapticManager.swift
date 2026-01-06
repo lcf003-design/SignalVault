@@ -41,4 +41,9 @@ class HapticManager {
     func playError() {
         notificationGenerator.notificationOccurred(.error)
     }
+    
+    // Mission 33: Discovery Thud
+    func playImpact() {
+        impactGeneratorHeavy.impactOccurred(intensity: 1.0)
+    }
 }

@@ -18,8 +18,15 @@ class SignalTestHarness {
             let stream = await marketService.streamQuotes(for: ["BTC"])
             
             for await tick in stream {
-                if let signal = await engine.process(tick: tick) {
+                let context = await engine.process(tick: tick)
+                
+                if let signal = context.tradeSignal {
                     print("--------------------------------------------------")
+                    print("🔭 SNIPER SCOPE ALIGNMENT: \(context.alignment.rawValue.uppercased())")
+                    if context.isDivergenceDetected {
+                         print("⚠️ DIVERGENCE DETECTED ⚠️")
+                    }
+                    
                     switch signal {
                     case .strongBuy(let confidence, let price):
                         print("🚨 SIGNAL ENTRY: STRONG BUY @ \(price.formatted(.currency(code: "USD"))) (Score: \(confidence))")
@@ -32,7 +39,7 @@ class SignalTestHarness {
                 } else {
                     // Heartbeat every 10 ticks so user knows it's alive
                     if Int(tick.timestamp.timeIntervalSince1970 * 10) % 10 == 0 {
-                        print("⏳ Buffering/Analyzing... Price: \(tick.price.formatted(.currency(code: "USD")))")
+                        print("⏳ Buffering/Analyzing... Price: \(tick.price.formatted(.currency(code: "USD"))) | Alignment: \(context.alignment)")
                     }
                 }
             }

@@ -16,7 +16,17 @@ class PortfolioViewModel: ObservableObject {
     @Published var riskScore: Int = 0 // 0-100
     @Published var allocationData: [AllocationSegment] = []
     
+    // Mission 37: Wealth Command Center Data
+    @Published var aiDailyPL: Double = 0.0 // "AI Alpha"
+    @Published var dailyAlpha: Double = 0.0 // User vs AI Difference
+    @Published var scannerSignals: [ScannedAsset] = [] // Alpha Ticker items
+    @Published var disciplineRating: Int = 100 // Discipline Audit
+    @Published var portfolioNews: [NewsItem] = [] // Portfolio-specific news
+    
+    // Dependencies
     private var modelContext: ModelContext?
+    private let sentimentService = SentimentService()
+    // MarketScannerService is an actor, we'll access it via a task
     
     init() {}
     
@@ -98,6 +108,45 @@ class PortfolioViewModel: ObservableObject {
             
         } catch {
             print("Failed to fetch data for Portfolio: \(error)")
+        }
+    }
+    
+    // Mission 37: Fetch External Data (Scanner & News)
+    func refreshViewData() async {
+        // 1. Update basic metrics
+        calculateMetrics()
+        
+        // 2. Fetch Scanner Signals (Using Mock for UI demo)
+        // In real app, this would query the central MarketScannerService actor
+        self.scannerSignals = [
+            ScannedAsset(symbol: "NVDA", name: "NVIDIA", price: 485.20, changePercent: 2.5, kaiScore: 92, volumeStatus: .ultra, aiSummary: "Breakout", assetType: .stock, convictionScore: 0.92, signalType: .strongBuy(confidence: 0.92, price: 485.20), isGlowing: true),
+            ScannedAsset(symbol: "BTC", name: "Bitcoin", price: 44200, changePercent: 1.2, kaiScore: 88, volumeStatus: .high, aiSummary: "Momentum", assetType: .crypto, convictionScore: 0.88, signalType: .strongBuy(confidence: 0.88, price: 44200), isGlowing: false),
+            ScannedAsset(symbol: "AMD", name: "AMD", price: 145.00, changePercent: -0.5, kaiScore: 45, volumeStatus: .normal, aiSummary: "Weak", assetType: .stock, convictionScore: 0.45, signalType: .neutral(confidence: 0.0), isGlowing: false),
+            ScannedAsset(symbol: "TSLA", name: "Tesla", price: 240.10, changePercent: 0.8, kaiScore: 78, volumeStatus: .normal, aiSummary: "Recovery", assetType: .stock, convictionScore: 0.78, signalType: .strongBuy(confidence: 0.78, price: 240.10), isGlowing: false),
+            ScannedAsset(symbol: "AAPL", name: "Apple", price: 185.50, changePercent: 0.1, kaiScore: 60, volumeStatus: .low, aiSummary: "DoJi", assetType: .stock, convictionScore: 0.60, signalType: .neutral(confidence: 0.0), isGlowing: false)
+        ]
+        
+        // 3. Simulate AI Alpha Comparison
+        // Mocking a scenario where AI is outperforming slightly
+        let projectedAIGains = self.totalEquity * 0.012 // +1.2%
+        self.aiDailyPL = projectedAIGains
+        self.dailyAlpha = self.totalPnL - self.aiDailyPL
+        
+        // 4. Fetch Portfolio News
+        // Get symbols from context
+        if let context = modelContext {
+            let descriptor = FetchDescriptor<Position>(predicate: #Predicate { $0.isOpen })
+            if let positions = try? context.fetch(descriptor) {
+                let symbols = positions.map { $0.symbol }
+                if !symbols.isEmpty {
+                     // Fetch specific news
+                     let allNews = await sentimentService.fetchSentiment(for: symbols.first ?? "SPY") // Mock single fetch
+                     // In real app, batch fetch.
+                     self.portfolioNews = allNews.headlines
+                } else {
+                    self.portfolioNews = []
+                }
+            }
         }
     }
 }
