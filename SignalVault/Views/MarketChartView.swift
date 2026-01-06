@@ -76,124 +76,146 @@ struct MarketChartView: View {
             .background(cloudColor.blur(radius: 20)) // Subtle background glow (Trend Cloud)
 
             
-            // Chart
-            Chart {
-                priceLineLayer()
-                targetMarkersLayer()
-                oracleConeLayer()
-                institutionalLevelsLayer()
-                eventMarkersLayer()
-                flashOverlayLayer()
-                signalsLayer()
-                scrubbingLayer()
-            }
-            // Mission 27: Adaptive Y-Scale for Targets
-            .chartYScale(domain: calculateYDomain())
-            .chartOverlay { proxy in
-                GeometryReader { geometry in
-                    ZStack(alignment: .topTrailing) {
-                        // Mission 28: Safety Lock
-                        if targetPosition != nil {
-                            Button(action: {
-                                withAnimation { isChartLocked.toggle() }
-                                if isChartLocked {
-                                    // Reset any active drag state
-                                    draggingTarget = .none
-                                } else {
-                                    let generator = UIImpactFeedbackGenerator(style: .medium)
-                                    generator.impactOccurred()
+            // Chart Layout
+            HStack(spacing: 0) {
+                // Main Price Chart
+                Chart {
+                    priceLineLayer()
+                    targetMarkersLayer()
+                    oracleConeLayer()
+                    institutionalLevelsLayer()
+                    eventMarkersLayer()
+                    flashOverlayLayer()
+                    signalsLayer()
+                    scrubbingLayer()
+                }
+                // Mission 27: Adaptive Y-Scale for Targets
+                .chartYScale(domain: calculateYDomain())
+                .chartOverlay { proxy in
+                    GeometryReader { geometry in
+                        ZStack(alignment: .topTrailing) {
+                            // Mission 28: Safety Lock
+                            if targetPosition != nil {
+                                Button(action: {
+                                    withAnimation { isChartLocked.toggle() }
+                                    if isChartLocked {
+                                        // Reset any active drag state
+                                        draggingTarget = .none
+                                    } else {
+                                        let generator = UIImpactFeedbackGenerator(style: .medium)
+                                        generator.impactOccurred()
+                                    }
+                                }) {
+                                    Image(systemName: isChartLocked ? "lock.fill" : "lock.open.fill")
+                                        .font(.title3)
+                                        .foregroundStyle(isChartLocked ? .secondary : .primary)
+                                        .padding(8)
+                                        .background(.ultraThinMaterial)
+                                        .clipShape(Circle())
                                 }
-                            }) {
-                                Image(systemName: isChartLocked ? "lock.fill" : "lock.open.fill")
-                                    .font(.title3)
-                                    .foregroundStyle(isChartLocked ? .secondary : .primary)
-                                    .padding(8)
-                                    .background(.ultraThinMaterial)
-                                    .clipShape(Circle())
+                                .padding(8)
                             }
-                            .padding(8)
-                        }
-                        
-                        // Hit Test Layer
-                        Rectangle().fill(.clear).contentShape(Rectangle())
-                            .gesture(
-                                DragGesture()
-                                    .onChanged { value in
-                                        let y = value.location.y
-                                        let x = value.location.x
-                                        
-                                        // 1. Identify Drag Target (Hit Testing)
-                                        if !isChartLocked, let position = targetPosition, draggingTarget == .none {
-                                            if let priceAtTouch: Double = proxy.value(atY: y) {
-                                                // Tolerance: 2% of Price
-                                                let tolerance = priceAtTouch * 0.02
-                                                
-                                                if let tp = position.takeProfitPrice, abs(priceAtTouch - tp) < tolerance {
-                                                    draggingTarget = .tp
-                                                    tempTP = tp
-                                                    HapticManager.shared.playImpact()
-                                                } else if let sl = position.stopLossPrice, abs(priceAtTouch - sl) < tolerance {
-                                                    draggingTarget = .sl
-                                                    tempSL = sl
-                                                    HapticManager.shared.playImpact()
+                            
+                            // Hit Test Layer
+                            Rectangle().fill(.clear).contentShape(Rectangle())
+                                .gesture(
+                                    DragGesture()
+                                        .onChanged { value in
+                                            let y = value.location.y
+                                            let x = value.location.x
+                                            
+                                            // 1. Identify Drag Target (Hit Testing)
+                                            if !isChartLocked, let position = targetPosition, draggingTarget == .none {
+                                                if let priceAtTouch: Double = proxy.value(atY: y) {
+                                                    // Tolerance: 2% of Price
+                                                    let tolerance = priceAtTouch * 0.02
+                                                    
+                                                    if let tp = position.takeProfitPrice, abs(priceAtTouch - tp) < tolerance {
+                                                        draggingTarget = .tp
+                                                        tempTP = tp
+                                                        HapticManager.shared.playImpact()
+                                                    } else if let sl = position.stopLossPrice, abs(priceAtTouch - sl) < tolerance {
+                                                        draggingTarget = .sl
+                                                        tempSL = sl
+                                                        HapticManager.shared.playImpact()
+                                                    }
                                                 }
                                             }
-                                        }
-                                        
-                                        // 2. Handle Dragging
-                                        if let price: Double = proxy.value(atY: y) {
-                                            if draggingTarget == .tp {
-                                                tempTP = snapPrice(price)
-                                                // Haptic Notch
-                                                if let last = lastHapticPrice, abs(price - last) > (price * 0.001) {
-                                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                                    generator.impactOccurred(intensity: 0.5)
-                                                    lastHapticPrice = price
-                                                } else if lastHapticPrice == nil {
-                                                    lastHapticPrice = price
-                                                }
-                                            } else if draggingTarget == .sl {
-                                                tempSL = snapPrice(price)
-                                                if let last = lastHapticPrice, abs(price - last) > (price * 0.001) {
-                                                    let generator = UIImpactFeedbackGenerator(style: .light)
-                                                    generator.impactOccurred(intensity: 0.5)
-                                                    lastHapticPrice = price
-                                                } else if lastHapticPrice == nil {
-                                                    lastHapticPrice = price
-                                                }
-                                            } else {
-                                                // Normal Scrubbing Behavior (if locked or no target hit)
-                                                if isChartLocked {
-                                                    if let date: Date = proxy.value(atX: x) {
-                                                        viewModel.selectedDate = date
-                                                        if let closest = viewModel.ticks.min(by: { abs($0.timestamp.timeIntervalSince(date)) < abs($1.timestamp.timeIntervalSince(date)) }) {
-                                                            viewModel.selectedPrice = closest.price
+                                            
+                                            // 2. Handle Dragging
+                                            if let price: Double = proxy.value(atY: y) {
+                                                if draggingTarget == .tp {
+                                                    tempTP = snapPrice(price)
+                                                    // Haptic Notch
+                                                    if let last = lastHapticPrice, abs(price - last) > (price * 0.001) {
+                                                        let generator = UIImpactFeedbackGenerator(style: .light)
+                                                        generator.impactOccurred(intensity: 0.5)
+                                                        lastHapticPrice = price
+                                                    } else if lastHapticPrice == nil {
+                                                        lastHapticPrice = price
+                                                    }
+                                                } else if draggingTarget == .sl {
+                                                    tempSL = snapPrice(price)
+                                                    if let last = lastHapticPrice, abs(price - last) > (price * 0.001) {
+                                                        let generator = UIImpactFeedbackGenerator(style: .light)
+                                                        generator.impactOccurred(intensity: 0.5)
+                                                        lastHapticPrice = price
+                                                    } else if lastHapticPrice == nil {
+                                                        lastHapticPrice = price
+                                                    }
+                                                } else {
+                                                    // Normal Scrubbing Behavior (if locked or no target hit)
+                                                    if isChartLocked {
+                                                        if let date: Date = proxy.value(atX: x) {
+                                                            viewModel.selectedDate = date
+                                                            if let closest = viewModel.ticks.min(by: { abs($0.timestamp.timeIntervalSince(date)) < abs($1.timestamp.timeIntervalSince(date)) }) {
+                                                                viewModel.selectedPrice = closest.price
+                                                            }
                                                         }
                                                     }
                                                 }
                                             }
                                         }
-                                    }
-                                    .onEnded { _ in
-                                        // Commit Changes
-                                        if draggingTarget == .tp, let newTP = tempTP, let position = targetPosition {
-                                            position.takeProfitPrice = newTP
-                                            HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0)) // Confirmation Thud
-                                        } else if draggingTarget == .sl, let newSL = tempSL, let position = targetPosition {
-                                            position.stopLossPrice = newSL
-                                            HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0))
+                                        .onEnded { _ in
+                                            // Commit Changes
+                                            if draggingTarget == .tp, let newTP = tempTP, let position = targetPosition {
+                                                position.takeProfitPrice = newTP
+                                                HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0)) // Confirmation Thud
+                                            } else if draggingTarget == .sl, let newSL = tempSL, let position = targetPosition {
+                                                position.stopLossPrice = newSL
+                                                HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0))
+                                            }
+                                            
+                                            // Reset State
+                                            draggingTarget = .none
+                                            tempTP = nil
+                                            tempSL = nil
+                                            lastHapticPrice = nil
+                                            viewModel.selectedDate = nil
+                                            viewModel.selectedPrice = nil
                                         }
-                                        
-                                        // Reset State
-                                        draggingTarget = .none
-                                        tempTP = nil
-                                        tempSL = nil
-                                        lastHapticPrice = nil
-                                        viewModel.selectedDate = nil
-                                        viewModel.selectedPrice = nil
-                                    }
-                            )
+                                )
+                        }
                     }
+                }
+                
+                // Mission 40: Volume Profile (VPVR) Sidebar
+                if !viewModel.volumeProfile.isEmpty {
+                    Chart {
+                        ForEach(viewModel.volumeProfile) { bar in
+                            RectangleMark(
+                                xStart: .value("Vol", 0),
+                                xEnd: .value("Vol", bar.totalVolume),
+                                y: .value("Price", bar.priceLevel),
+                                height: .fixed(4)
+                            )
+                            .foregroundStyle(bar.isPOC ? .yellow : .gray.opacity(0.3))
+                        }
+                    }
+                    .frame(width: 60)
+                    .chartYScale(domain: calculateYDomain()) // Sync Y-Axis
+                    .chartXAxis(.hidden)
+                    .chartYAxis(.hidden)
                 }
             }
             .frame(height: 250)
@@ -417,9 +439,9 @@ struct MarketChartView: View {
     private func signalsLayer() -> some ChartContent {
         // Mission 39: Signal History Persistence
         // Iterate through all historical signals and plot Arrows
-        ForEach(viewModel.signalHistory) { event in
+        ForEach(viewModel.signals) { event in
             // Buy Signals (Up Arrow)
-            if case .strongBuy = event.signal {
+            if case .strongBuy = event.type {
                 PointMark(
                     x: .value("Time", event.timestamp),
                     y: .value("Price", event.price * 0.9995)
@@ -433,7 +455,7 @@ struct MarketChartView: View {
                 }
             }
             // Sell Signals (Down Arrow)
-            else if case .strongSell = event.signal {
+            else if case .strongSell = event.type {
                 PointMark(
                     x: .value("Time", event.timestamp),
                     y: .value("Price", event.price * 1.0005)

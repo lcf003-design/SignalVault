@@ -8,8 +8,9 @@ class MarketChartViewModel {
     // Data Buffers
     var ticks: [MarketTick] = []
     var candles: [Candle] = [] // Mission 38
-    var signals: [TradeSignal] = [] // Legacy Buffer
-    var signalHistory: [SignalEvent] = [] // Mission 39: Persistent History
+    var signals: [SignalEvent] = [] // Mission 39: Persistent History
+    var volumeProfile: [VolumeProfileBar] = [] // Mission 40: VPVR
+    private var rawVolumeBuckets: [Double: Double] = [:] // Aggregator
     
     // UI State
     var currentPrice: Double = 0.0
@@ -85,7 +86,9 @@ class MarketChartViewModel {
         // Mission 12: Reset AI Engine
         Task {
             await engine.reset()
-            self.signalHistory.removeAll()
+            self.signals.removeAll()
+            self.volumeProfile.removeAll()
+            self.rawVolumeBuckets.removeAll()
             start()
         }
     }
@@ -119,6 +122,9 @@ class MarketChartViewModel {
                 // Mission 38: Aggregate Candle
                 self.processTickIntoCandle(tick)
                 
+                // Mission 40: Process Volume Profile
+                self.updateVolumeProfile(tick: tick)
+                
                 // 2. Process Signal (Mission 34: Context Aware)
                 let context = await self.engine.process(tick: tick)
                 
@@ -136,12 +142,11 @@ class MarketChartViewModel {
                 self.isConsolidating = context.isConsolidating
                 
                 if let newSignal = context.tradeSignal {
-                    self.signals.append(newSignal)
                     self.activeSignal = newSignal
                     
                     // Mission 39: History
-                    let event = SignalEvent(signal: newSignal, timestamp: tick.timestamp, price: tick.price)
-                    self.signalHistory.append(event)
+                    let event = SignalEvent(timestamp: tick.timestamp, type: newSignal, price: tick.price)
+                    self.signals.append(event)
                     
                     // Audio Announcement (Mission 34)
                     switch newSignal {
@@ -255,5 +260,26 @@ class MarketChartViewModel {
         if candles.count > 100 {
             candles.removeFirst()
         }
+    }
+    
+    // Mission 40: Volume Profile Logic
+    private func updateVolumeProfile(tick: MarketTick) {
+        // Bin size: $1.00 (as requested)
+        let bucket = floor(tick.price)
+        
+        // Accumulate volume
+        rawVolumeBuckets[bucket, default: 0] += tick.volume
+        
+        // Update Published Array (Throttle this in production, but OK for MVP)
+        // Find POC (Max Volume)
+        let maxVol = rawVolumeBuckets.values.max() ?? 0
+        
+        self.volumeProfile = rawVolumeBuckets.map { (price, vol) in
+            VolumeProfileBar(
+                priceLevel: price,
+                totalVolume: vol,
+                isPOC: vol >= maxVol && maxVol > 0
+            )
+        }.sorted(by: { $0.priceLevel < $1.priceLevel })
     }
 }

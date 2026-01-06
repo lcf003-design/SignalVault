@@ -244,9 +244,18 @@ struct Candle: Identifiable, Sendable, Hashable {
 }
 
 // Mission 39: Signal History
+// Mission 39: Signal History
 struct SignalEvent: Identifiable, Sendable {
     let id = UUID()
-    let signal: TradeSignal
     let timestamp: Date
+    let type: TradeSignal
     let price: Double
+}
+
+// Mission 40: Volume Profile
+struct VolumeProfileBar: Identifiable, Sendable {
+    let id = UUID()
+    let priceLevel: Double // Bucket Floor (e.g. 150.0)
+    var totalVolume: Double
+    var isPOC: Bool // Point of Control
 }
