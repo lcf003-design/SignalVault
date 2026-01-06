@@ -25,6 +25,10 @@ struct MarketChartView: View {
         }
     }
     
+    // Mission 38: Chart Scale
+    private let candleWidth: CGFloat = 6.0
+    private let wickWidth: CGFloat = 2.0
+    
     var body: some View {
         VStack {
             // Header
@@ -279,14 +283,24 @@ struct MarketChartView: View {
     // MARK: - Chart Builders
     @ChartContentBuilder
     private func priceLineLayer() -> some ChartContent {
-        ForEach(viewModel.ticks, id: \.timestamp) { tick in
-            LineMark(
-                x: .value("Time", tick.timestamp),
-                y: .value("Price", tick.price)
+        ForEach(viewModel.candles) { candle in
+            // Wick (High-Low)
+            RectangleMark(
+                x: .value("Time", candle.timestamp),
+                yStart: .value("Low", candle.low),
+                yEnd: .value("High", candle.high),
+                width: .fixed(wickWidth)
             )
-            .foregroundStyle(.blue.gradient)
-            .interpolationMethod(.monotone)
-            .shadow(color: (viewModel.activeSignal?.isBuy ?? false) ? .green : .clear, radius: 10)
+            .foregroundStyle(candle.isBullish ? .green : .red)
+            
+            // Body (Open-Close)
+            RectangleMark(
+                x: .value("Time", candle.timestamp),
+                yStart: .value("Open", candle.open),
+                yEnd: .value("Close", candle.close),
+                width: .fixed(candleWidth)
+            )
+            .foregroundStyle(candle.isBullish ? .green : .red)
         }
     }
     
@@ -401,14 +415,27 @@ struct MarketChartView: View {
     
     @ChartContentBuilder
     private func signalsLayer() -> some ChartContent {
-        ForEach(viewModel.signals, id: \.self) { signal in
-            if case .strongBuy(_, let price) = signal {
-                PointMark(x: .value("Time", Date()), y: .value("Price", price)) // TODO: Fix timestamp
-                    .symbol { Image(systemName: "arrowtriangle.up.fill").foregroundStyle(.green) }
-            }
-            if case .strongSell(_, let price) = signal {
-                PointMark(x: .value("Time", Date()), y: .value("Price", price))
-                    .symbol { Image(systemName: "arrowtriangle.down.fill").foregroundStyle(.red) }
+        // Mission 38: Live Signal Overlay
+        // We currently visualize the ACTIVE signal on the current candle.
+        if let active = viewModel.activeSignal, let last = viewModel.candles.last {
+            if case .strongBuy(_, _) = active {
+                PointMark(x: .value("Time", last.timestamp), y: .value("Price", last.low * 0.9995))
+                    .foregroundStyle(.clear)
+                    .annotation(position: .bottom) {
+                        Image(systemName: "arrowtriangle.up.fill")
+                            .foregroundStyle(.green)
+                            .font(.title3)
+                            .shadow(color: .green.opacity(0.5), radius: 4)
+                    }
+            } else if case .strongSell(_, _) = active {
+                 PointMark(x: .value("Time", last.timestamp), y: .value("Price", last.high * 1.0005))
+                     .foregroundStyle(.clear)
+                     .annotation(position: .top) {
+                         Image(systemName: "arrowtriangle.down.fill")
+                             .foregroundStyle(.red)
+                             .font(.title3)
+                             .shadow(color: .red.opacity(0.5), radius: 4)
+                     }
             }
         }
     }

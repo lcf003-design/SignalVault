@@ -229,3 +229,16 @@ enum VolumeStatus: String, Sendable, Codable {
 
 
 
+
+// Mission 38: Candlestick Support
+struct Candle: Identifiable, Sendable, Hashable {
+    let id = UUID()
+    let timestamp: Date
+    var open: Double
+    var high: Double
+    var low: Double
+    var close: Double
+    var volume: Double
+    
+    var isBullish: Bool { close >= open }
+}

@@ -7,6 +7,7 @@ import Observation
 class MarketChartViewModel {
     // Data Buffers
     var ticks: [MarketTick] = []
+    var candles: [Candle] = [] // Mission 38
     var signals: [TradeSignal] = []
     
     // UI State
@@ -113,6 +114,9 @@ class MarketChartViewModel {
                     self.ticks.removeFirst()
                 }
                 
+                // Mission 38: Aggregate Candle
+                self.processTickIntoCandle(tick)
+                
                 // 2. Process Signal (Mission 34: Context Aware)
                 let context = await self.engine.process(tick: tick)
                 
@@ -211,6 +215,39 @@ class MarketChartViewModel {
     func fetchEconomicEvents() async {
         let events = await macroService.fetchEconomicEvents()
         self.economicEvents = events
+        self.economicEvents = events
         await engine.updateEvents(events)
+    }
+    
+    // Mission 38: Candle Aggregation Logic
+    private func processTickIntoCandle(_ tick: MarketTick) {
+        let calendar = Calendar.current
+        // Round down to nearest minute
+        let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: tick.timestamp)
+        guard let candleTime = calendar.date(from: components) else { return }
+        
+        if var lastCandle = candles.last {
+            if lastCandle.timestamp == candleTime {
+                // Update existing candle
+                lastCandle.high = max(lastCandle.high, tick.price)
+                lastCandle.low = min(lastCandle.low, tick.price)
+                lastCandle.close = tick.price
+                lastCandle.volume += tick.volume
+                candles[candles.count - 1] = lastCandle
+            } else {
+                // Start new candle
+                let newCandle = Candle(timestamp: candleTime, open: tick.price, high: tick.price, low: tick.price, close: tick.price, volume: tick.volume)
+                candles.append(newCandle)
+            }
+        } else {
+            // First candle
+            let newCandle = Candle(timestamp: candleTime, open: tick.price, high: tick.price, low: tick.price, close: tick.price, volume: tick.volume)
+            candles.append(newCandle)
+        }
+        
+        // Limit candles buffer
+        if candles.count > 100 {
+            candles.removeFirst()
+        }
     }
 }
