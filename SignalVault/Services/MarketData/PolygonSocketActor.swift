@@ -8,6 +8,8 @@ actor PolygonSocketActor {
     private var isConnected = false
     private var reconnectAttempts = 0
     
+    private var isAuthFailed = false
+    
     // Stream continuation
     private var tickContinuation: AsyncStream<MarketTick>.Continuation?
     
@@ -20,6 +22,8 @@ actor PolygonSocketActor {
     }
     
     func connect() {
+        // Reset state on explicit connect
+        isAuthFailed = false
         guard !isConnected else { return }
         
         print("🔌 Connecting to Polygon via Socket...")
@@ -38,6 +42,11 @@ actor PolygonSocketActor {
     }
     
     func subscribe(symbols: [String], apiKey: String) async {
+        guard !isAuthFailed else {
+            print("🚫 Skipping subscription: Auth previously failed.")
+            return
+        }
+        
         // 1. Authenticate
         let authMessage = "{\"action\":\"auth\",\"params\":\"\(apiKey)\"}"
         try? await send(text: authMessage)
@@ -84,6 +93,12 @@ actor PolygonSocketActor {
                     tickContinuation?.yield(tick)
                 } else if case .status(let status) = msg {
                     print("ℹ️ Polygon Status: \(status.status) - \(status.message)")
+                    
+                    if status.status == "auth_failed" {
+                        self.isAuthFailed = true
+                        print("🚫 Stopping Polygon Socket Reconnection due to Auth Failure.")
+                        self.disconnect()
+                    }
                 }
             }
         } catch {
@@ -93,6 +108,12 @@ actor PolygonSocketActor {
     
     private func handleDisconnection() async {
         isConnected = false
+        
+        if isAuthFailed {
+            print("🛑 Socket Disconnected. Will NOT reconnect due to Auth Failure.")
+            return
+        }
+        
         print("⚠️ Socket Disconnected. Reconnecting...")
         try? await Task.sleep(for: .seconds(2))
         connect()

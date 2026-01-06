@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum AssetType: String, Codable {
     case stock
@@ -159,11 +160,11 @@ enum TimeframeAlignment: String, Sendable, Codable {
     case bearish = "Bearish" // Red Cloud
     case mixed = "Mixed"     // Yellow Cloud
     
-    var colorName: String {
+    var color: Color {
         switch self {
-        case .bullish: return "green"
-        case .bearish: return "red"
-        case .mixed: return "yellow"
+        case .bullish: return .green
+        case .bearish: return .red
+        case .mixed: return .yellow
         }
     }
 }
@@ -208,11 +209,11 @@ struct ScannedAsset: Identifiable, Sendable, Hashable {
     let isGlowing: Bool // UI Helper
     
     // Helper for List View
-    var signalColor: String { // Use color name strings for safety
+    var signalColor: Color {
         if convictionScore >= 0.90 {
-            return signalType.isBuy ? "green" : "red"
+            return signalType.isBuy ? .green : .red
         }
-        return "gray"
+        return .gray
     }
 }
 

@@ -150,7 +150,7 @@ class MarketScannerService: ObservableObject {
         
         // Legacy Support
         let legacyScore = techScore
-        let isPerfectAlignment = context.alignment != .mixed
+        // let isPerfectAlignment = context.alignment != .mixed // Unused
         let shouldGlow = kaiScore >= 85
         
         let change = Double.random(in: -3.0...3.0)

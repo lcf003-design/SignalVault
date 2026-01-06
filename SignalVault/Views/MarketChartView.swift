@@ -63,7 +63,7 @@ struct MarketChartView: View {
                         // Show Trend Status if no active signal
                         Text(viewModel.trendAlignment.rawValue.uppercased())
                             .font(.caption2.bold())
-                            .foregroundStyle(Color(viewModel.trendAlignment.colorName))
+                            .foregroundStyle(viewModel.trendAlignment.color)
                     }
                 }
             }
@@ -74,248 +74,14 @@ struct MarketChartView: View {
             
             // Chart
             Chart {
-                // Price Line
-                ForEach(viewModel.ticks, id: \.timestamp) { tick in
-                    LineMark(
-                        x: .value("Time", tick.timestamp),
-                        y: .value("Price", tick.price)
-                    )
-                    .foregroundStyle(.blue.gradient)
-                    .interpolationMethod(.monotone)
-                    // Mission 8: Glow Effect on Strong Buy
-                    .shadow(color: (viewModel.activeSignal?.isBuy ?? false) ? .green : .clear, radius: 10)
-                }
-                
-                // Mission 27: Visual Profit Targets & Risk Markers
-                if let position = targetPosition {
-                    // 1. Entry Anchor (White)
-                    RuleMark(y: .value("Entry", position.entryPrice))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .annotation(position: .leading) {
-                            Text("ENTRY")
-                                .font(.caption2.bold())
-                                .foregroundStyle(.white)
-                                .padding(2)
-                                .background(Color.gray.opacity(0.5))
-                                .cornerRadius(4)
-                        }
-                    
-                    // 2. Take Profit (Green)
-                    // Mission 28: Use tempTP if dragging
-                    if let tp = (draggingTarget == .tp ? tempTP : position.takeProfitPrice) {
-                        RuleMark(y: .value("TP", tp))
-                            .lineStyle(StrokeStyle(lineWidth: draggingTarget == .tp ? 3 : 1, dash: draggingTarget == .tp ? [] : [4, 4]))
-                            .foregroundStyle(.green)
-                            // Mission 28: Glow when active
-                            .shadow(color: draggingTarget == .tp ? .green : .clear, radius: 10)
-                            .annotation(position: .trailing) {
-                                Text("TP: \(tp.formatted(.currency(code: "USD")))")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(.green)
-                                    .scaleEffect(draggingTarget == .tp ? 1.2 : 1.0)
-                            }
-                    }
-                    
-                    // 3. Stop Loss (Red)
-                    // Mission 28: Use tempSL if dragging
-                    if let sl = (draggingTarget == .sl ? tempSL : position.stopLossPrice) {
-                        RuleMark(y: .value("SL", sl))
-                            .lineStyle(StrokeStyle(lineWidth: draggingTarget == .sl ? 3 : 1, dash: draggingTarget == .sl ? [] : [4, 4]))
-                            .foregroundStyle(.red)
-                            // Mission 28: Glow when active
-                            .shadow(color: draggingTarget == .sl ? .red : .clear, radius: 10)
-                            .annotation(position: .trailing) {
-                                Text("SL: \(sl.formatted(.currency(code: "USD")))")
-                                    .font(.caption2.bold())
-                                    .foregroundStyle(.red)
-                                    .scaleEffect(draggingTarget == .sl ? 1.2 : 1.0)
-                            }
-                    }
-                }
-                
-                // Mission 13: Oracle Cone (Predictive)
-                if let projection = viewModel.projection, let lastDate = viewModel.ticks.last?.timestamp {
-                    let interval: TimeInterval = 0.5 // Est. bar duration
-                    
-                    ForEach(projection.points) { point in
-                        let futureDate = lastDate.addingTimeInterval(interval * Double(point.indexOffset))
-                        
-                        // 2SD Cone (95% Probability)
-                        AreaMark(
-                            x: .value("Time", futureDate),
-                            yStart: .value("Lower 2SD", point.lower2SD),
-                            yEnd: .value("Upper 2SD", point.upper2SD)
-                        )
-                        .foregroundStyle(projection.isReliable ? .blue.opacity(0.1) : .gray.opacity(0.1))
-                        
-                        // 1SD Cone (68% Probability)
-                        AreaMark(
-                            x: .value("Time", futureDate),
-                            yStart: .value("Lower 1SD", point.lower1SD),
-                            yEnd: .value("Upper 1SD", point.upper1SD)
-                        )
-                        .foregroundStyle(projection.isReliable ? .blue.opacity(0.2) : .gray.opacity(0.2))
-                        
-                        // Projected Path
-                        LineMark(
-                            x: .value("Time", futureDate),
-                            y: .value("Projected", point.price)
-                        )
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        .foregroundStyle(.white.opacity(0.5))
-                    }
-                }
-                
-                // Mission 13: Price Stretched Alert
-                if let alert = viewModel.chartAlert {
-                    RuleMark(y: .value("Alert", viewModel.currentPrice))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
-                        .foregroundStyle(.red)
-                        .annotation(position: .top) {
-                            Text(alert) // e.g. "PRICE STRETCHED: 3.1σ"
-                                .font(.caption.bold())
-                                .foregroundStyle(.white)
-                                .padding(6)
-                                .background(Color.red.gradient)
-                                .cornerRadius(8)
-                                .shadow(radius: 2)
-                        }
-                }
-                
-                // Mission 36: Institutional VWAP Line
-                if let vwap = viewModel.vwap {
-                    RuleMark(y: .value("VWAP", vwap))
-                        .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5]))
-                        .foregroundStyle(.cyan.opacity(0.8))
-                        .annotation(position: .trailing, alignment: .center) {
-                            Text("VWAP")
-                                .font(.caption2.bold())
-                                .foregroundStyle(.cyan)
-                                .padding(4)
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(4)
-                        }
-                }
-                
-                // Mission 36 Part 2: ORB Lines & Shading
-                if let orbH = viewModel.openingRangeHigh, let orbL = viewModel.openingRangeLow {
-                    // Shading (Opening 15 mins)
-                    if let start = viewModel.ticks.first?.timestamp {
-                         RectangleMark(
-                             xStart: .value("ORB Start", start),
-                             xEnd: .value("ORB End", start.addingTimeInterval(900)),
-                             yStart: .value("High", orbH),
-                             yEnd: .value("Low", orbL)
-                         )
-                         .foregroundStyle(.gray.opacity(0.1))
-                    }
-                    
-                    // High Line
-                    RuleMark(y: .value("ORB High", orbH))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
-                        .foregroundStyle(.gray)
-                        .annotation(position: .leading) {
-                            Text("ORB H")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                        
-                    // Low Line
-                    RuleMark(y: .value("ORB Low", orbL))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
-                        .foregroundStyle(.gray)
-                        .annotation(position: .leading) {
-                            Text("ORB L")
-                                .font(.caption2)
-                                .foregroundStyle(.secondary)
-                        }
-                }
-                
-                // Session Pivots (YH/YL)
-                if let yh = viewModel.yesterdayHigh {
-                    RuleMark(y: .value("YH", yh))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .annotation(position: .trailing) { Text("YH").font(.caption2).foregroundStyle(.secondary) }
-                }
-                if let yl = viewModel.yesterdayLow {
-                    RuleMark(y: .value("YL", yl))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4]))
-                        .foregroundStyle(.white.opacity(0.6))
-                        .annotation(position: .trailing) { Text("YL").font(.caption2).foregroundStyle(.secondary) }
-                }
-                
-                // Mission 32: Economic Event Markers
-                ForEach(viewModel.economicEvents) { event in
-                    RuleMark(x: .value("Event", event.date))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
-                        .foregroundStyle(Color(event.impact.color))
-                        .annotation(position: .top, alignment: .center) {
-                            VStack(spacing: 2) {
-                                Image(systemName: "calendar.badge.exclamationmark")
-                                    .foregroundStyle(.white)
-                                    .font(.caption2)
-                                Text(event.title)
-                                    .font(.system(size: 8, weight: .bold))
-                                    .foregroundStyle(.white)
-                                    .multilineTextAlignment(.center)
-                            }
-                            .padding(4)
-                            .background(Color(event.impact.color).gradient)
-                            .cornerRadius(4)
-                            .shadow(radius: 2)
-                        }
-                }
-                
-                // Mission 8: Flash Alert Overlay
-                if let signal = viewModel.activeSignal {
-                     RuleMark(y: .value("Flash", 0)) // Hidden Anchor
-                         .annotation(position: .overlay) {
-                             RoundedRectangle(cornerRadius: 0)
-                                 .strokeBorder(getSignalColor(signal), lineWidth: flashColor != nil ? 4 : 0)
-                                 .ignoresSafeArea()
-                                 .opacity(flashColor != nil ? 1.0 : 0.0)
-                                 .animation(.easeInOut(duration: 0.2), value: flashColor)
-                         }
-                }
-                
-                // Signal Annotations
-                ForEach(viewModel.signals, id: \.self) { signal in
-                    if case .strongBuy(_, let price) = signal {
-                        PointMark(
-                            x: .value("Time", Date()), // Warning: Needs real timestamp in signal
-                            y: .value("Price", price)
-                        )
-                        .symbol {
-                            Image(systemName: "arrowtriangle.up.fill")
-                                .foregroundStyle(.green)
-                        }
-                    }
-                    if case .strongSell(_, let price) = signal {
-                         PointMark(
-                             x: .value("Time", Date()), // Placeholder
-                             y: .value("Price", price)
-                         )
-                         .symbol {
-                             Image(systemName: "arrowtriangle.down.fill")
-                                 .foregroundStyle(.red)
-                         }
-                    }
-                }
-                
-                // Scrubbing RuleMark
-                if let selectedDate = viewModel.selectedDate, let selectedPrice = viewModel.selectedPrice {
-                    RuleMark(x: .value("Selected", selectedDate))
-                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5]))
-                        .foregroundStyle(.secondary)
-                    
-                    PointMark(
-                        x: .value("Selected", selectedDate),
-                        y: .value("Price", selectedPrice)
-                    )
-                    .foregroundStyle(.white)
-                }
+                priceLineLayer()
+                targetMarkersLayer()
+                oracleConeLayer()
+                institutionalLevelsLayer()
+                eventMarkersLayer()
+                flashOverlayLayer()
+                signalsLayer()
+                scrubbingLayer()
             }
             // Mission 27: Adaptive Y-Scale for Targets
             .chartYScale(domain: calculateYDomain())
@@ -408,10 +174,10 @@ struct MarketChartView: View {
                                         // Commit Changes
                                         if draggingTarget == .tp, let newTP = tempTP, let position = targetPosition {
                                             position.takeProfitPrice = newTP
-                                            HapticManager.shared.playSignalHaptic(type: .neutral) // Confirmation Thud
+                                            HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0)) // Confirmation Thud
                                         } else if draggingTarget == .sl, let newSL = tempSL, let position = targetPosition {
                                             position.stopLossPrice = newSL
-                                            HapticManager.shared.playSignalHaptic(type: .neutral)
+                                            HapticManager.shared.playSignalHaptic(type: .neutral(confidence: 1.0))
                                         }
                                         
                                         // Reset State
@@ -502,6 +268,156 @@ struct MarketChartView: View {
         case .strongBuy: return .green
         case .strongSell: return .red
         default: return .gray
+        }
+    }
+    
+    private func snapPrice(_ price: Double) -> Double {
+         // Snap to 0.05
+         return (price * 20).rounded() / 20
+    }
+    
+    // MARK: - Chart Builders
+    @ChartContentBuilder
+    private func priceLineLayer() -> some ChartContent {
+        ForEach(viewModel.ticks, id: \.timestamp) { tick in
+            LineMark(
+                x: .value("Time", tick.timestamp),
+                y: .value("Price", tick.price)
+            )
+            .foregroundStyle(.blue.gradient)
+            .interpolationMethod(.monotone)
+            .shadow(color: (viewModel.activeSignal?.isBuy ?? false) ? .green : .clear, radius: 10)
+        }
+    }
+    
+    @ChartContentBuilder
+    private func targetMarkersLayer() -> some ChartContent {
+        if let position = targetPosition {
+            RuleMark(y: .value("Entry", position.entryPrice))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2]))
+                .foregroundStyle(.white.opacity(0.8))
+                .annotation(position: .leading) {
+                    Text("ENTRY").font(.caption2.bold()).foregroundStyle(.white).padding(2).background(Color.gray.opacity(0.5)).cornerRadius(4)
+                }
+            
+            if let tp = (draggingTarget == .tp ? tempTP : position.takeProfitPrice) {
+                RuleMark(y: .value("TP", tp))
+                    .lineStyle(StrokeStyle(lineWidth: draggingTarget == .tp ? 3 : 1, dash: draggingTarget == .tp ? [] : [4, 4]))
+                    .foregroundStyle(.green)
+                    .shadow(color: draggingTarget == .tp ? .green : .clear, radius: 10)
+                    .annotation(position: .trailing) {
+                        Text("TP: \(tp.formatted(.currency(code: "USD")))")
+                            .font(.caption2.bold()).foregroundStyle(.green).scaleEffect(draggingTarget == .tp ? 1.2 : 1.0)
+                    }
+            }
+            
+            if let sl = (draggingTarget == .sl ? tempSL : position.stopLossPrice) {
+                RuleMark(y: .value("SL", sl))
+                    .lineStyle(StrokeStyle(lineWidth: draggingTarget == .sl ? 3 : 1, dash: draggingTarget == .sl ? [] : [4, 4]))
+                    .foregroundStyle(.red)
+                    .shadow(color: draggingTarget == .sl ? .red : .clear, radius: 10)
+                    .annotation(position: .trailing) {
+                        Text("SL: \(sl.formatted(.currency(code: "USD")))")
+                            .font(.caption2.bold()).foregroundStyle(.red).scaleEffect(draggingTarget == .sl ? 1.2 : 1.0)
+                    }
+            }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func oracleConeLayer() -> some ChartContent {
+        if let projection = viewModel.projection, let lastDate = viewModel.ticks.last?.timestamp {
+            let interval: TimeInterval = 0.5
+            ForEach(projection.points) { point in
+                let futureDate = lastDate.addingTimeInterval(interval * Double(point.indexOffset))
+                AreaMark(x: .value("Time", futureDate), yStart: .value("Lower 2SD", point.lower2SD), yEnd: .value("Upper 2SD", point.upper2SD))
+                    .foregroundStyle(projection.isReliable ? .blue.opacity(0.1) : .gray.opacity(0.1))
+                AreaMark(x: .value("Time", futureDate), yStart: .value("Lower 1SD", point.lower1SD), yEnd: .value("Upper 1SD", point.upper1SD))
+                    .foregroundStyle(projection.isReliable ? .blue.opacity(0.2) : .gray.opacity(0.2))
+                LineMark(x: .value("Time", futureDate), y: .value("Projected", point.price))
+                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.5))
+            }
+        }
+        if let alert = viewModel.chartAlert {
+            RuleMark(y: .value("Alert", viewModel.currentPrice))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.red)
+                .annotation(position: .top) {
+                    Text(alert).font(.caption.bold()).foregroundStyle(.white).padding(6).background(Color.red.gradient).cornerRadius(8).shadow(radius: 2)
+                }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func institutionalLevelsLayer() -> some ChartContent {
+        if let vwap = viewModel.vwap {
+            RuleMark(y: .value("VWAP", vwap))
+                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5])).foregroundStyle(.cyan.opacity(0.8))
+                .annotation(position: .trailing, alignment: .center) {
+                    Text("VWAP").font(.caption2.bold()).foregroundStyle(.cyan).padding(4).background(.ultraThinMaterial).cornerRadius(4)
+                }
+        }
+        if let orbH = viewModel.openingRangeHigh, let orbL = viewModel.openingRangeLow {
+            if let start = viewModel.ticks.first?.timestamp {
+                RectangleMark(xStart: .value("ORB Start", start), xEnd: .value("ORB End", start.addingTimeInterval(900)), yStart: .value("High", orbH), yEnd: .value("Low", orbL))
+                    .foregroundStyle(.gray.opacity(0.1))
+            }
+            RuleMark(y: .value("ORB High", orbH)).lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.gray).annotation(position: .leading) { Text("ORB H").font(.caption2).foregroundStyle(.secondary) }
+            RuleMark(y: .value("ORB Low", orbL)).lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.gray).annotation(position: .leading) { Text("ORB L").font(.caption2).foregroundStyle(.secondary) }
+        }
+        if let yh = viewModel.yesterdayHigh {
+            RuleMark(y: .value("YH", yh)).lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.6)).annotation(position: .trailing) { Text("YH").font(.caption2).foregroundStyle(.secondary) }
+        }
+        if let yl = viewModel.yesterdayLow {
+            RuleMark(y: .value("YL", yl)).lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.6)).annotation(position: .trailing) { Text("YL").font(.caption2).foregroundStyle(.secondary) }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func eventMarkersLayer() -> some ChartContent {
+        ForEach(viewModel.economicEvents) { event in
+            RuleMark(x: .value("Event", event.date))
+                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(event.impact.color)
+                .annotation(position: .top, alignment: .center) {
+                    VStack(spacing: 2) {
+                        Image(systemName: "calendar.badge.exclamationmark").foregroundStyle(.white).font(.caption2)
+                        Text(event.title).font(.system(size: 8, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center)
+                    }.padding(4).background(event.impact.color.gradient).cornerRadius(4).shadow(radius: 2)
+                }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func flashOverlayLayer() -> some ChartContent {
+        if let signal = viewModel.activeSignal {
+            RuleMark(y: .value("Flash", 0))
+                .annotation(position: .overlay) {
+                    RoundedRectangle(cornerRadius: 0)
+                        .strokeBorder(getSignalColor(signal), lineWidth: flashColor != nil ? 4 : 0)
+                        .ignoresSafeArea().opacity(flashColor != nil ? 1.0 : 0.0)
+                        .animation(.easeInOut(duration: 0.2), value: flashColor)
+                }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func signalsLayer() -> some ChartContent {
+        ForEach(viewModel.signals, id: \.self) { signal in
+            if case .strongBuy(_, let price) = signal {
+                PointMark(x: .value("Time", Date()), y: .value("Price", price)) // TODO: Fix timestamp
+                    .symbol { Image(systemName: "arrowtriangle.up.fill").foregroundStyle(.green) }
+            }
+            if case .strongSell(_, let price) = signal {
+                PointMark(x: .value("Time", Date()), y: .value("Price", price))
+                    .symbol { Image(systemName: "arrowtriangle.down.fill").foregroundStyle(.red) }
+            }
+        }
+    }
+    
+    @ChartContentBuilder
+    private func scrubbingLayer() -> some ChartContent {
+        if let selectedDate = viewModel.selectedDate, let selectedPrice = viewModel.selectedPrice {
+            RuleMark(x: .value("Selected", selectedDate)).lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 5])).foregroundStyle(.secondary)
+            PointMark(x: .value("Selected", selectedDate), y: .value("Price", selectedPrice)).foregroundStyle(.white)
         }
     }
 }

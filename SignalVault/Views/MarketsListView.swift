@@ -56,7 +56,7 @@ struct MarketsListView: View {
                                 Circle()
                                     .trim(from: 0, to: Double(asset.kaiScore) / 100.0)
                                     .stroke(
-                                        asset.signalColor == "green" ? Color.green : (asset.signalColor == "red" ? Color.red : Color.gray),
+                                        asset.signalColor,
                                         style: StrokeStyle(lineWidth: 3, lineCap: .round)
                                     )
                                     .rotationEffect(.degrees(-90))

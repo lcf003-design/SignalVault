@@ -50,7 +50,7 @@ struct PortfolioSummaryView: View {
                     .padding(.horizontal)
                     
                     // 2. Alpha Comparison Card
-                    DailyAlphaCard(userPL: viewModel.totalPnL, aiPL: viewModel.aiDailyPL)
+                    AlphaMetricCard(userPL: viewModel.totalPnL, aiPL: viewModel.aiDailyPL)
                         .padding(.horizontal)
                         
                     // 3. Alpha Ticker
@@ -178,7 +178,7 @@ struct PortfolioSummaryView: View {
 
 // MARK: - Mission 37: Alpha Components
 
-struct DailyAlphaCard: View {
+struct AlphaMetricCard: View {
     let userPL: Double
     let aiPL: Double
     
@@ -272,11 +272,11 @@ struct AlphaTickerCell: View {
                     .cornerRadius(4)
             }
             
-            Text(signal.signalType.isBuy ? "STRONG BUY" : "NEUTRAL")
+            Text(signalTypeString(signal.signalType))
                 .font(.system(size: 8, weight: .bold))
-                .foregroundStyle(signal.signalType.isBuy ? .black : .white)
+                .foregroundStyle(signalColor(signal.signalType) == .gray ? .white : .black) // Contrast
                 .padding(2)
-                .background(signal.signalType.isBuy ? Color.green : Color.gray)
+                .background(signalColor(signal.signalType))
                 .cornerRadius(2)
             
             Text(signal.aiSummary)
@@ -292,5 +292,21 @@ struct AlphaTickerCell: View {
             RoundedRectangle(cornerRadius: 12)
                 .stroke(signal.isGlowing ? Color.purple : Color.clear, lineWidth: 1)
         )
+    }
+    
+    private func signalTypeString(_ signal: TradeSignal) -> String {
+        switch signal {
+        case .strongBuy: return "STRONG BUY"
+        case .strongSell: return "STRONG SELL"
+        case .neutral: return "NEUTRAL"
+        }
+    }
+    
+    private func signalColor(_ signal: TradeSignal) -> Color {
+        switch signal {
+        case .strongBuy: return .green
+        case .strongSell: return .red
+        case .neutral: return .gray
+        }
     }
 }

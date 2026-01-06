@@ -168,8 +168,8 @@ actor SignalEngine {
         let m15 = states[.m15]!.latestSignal
         
         let signals = [m1, m5, m15]
-        let buyCount = signals.filter { $0.isBuy }.count
-        let sellCount = signals.filter { $0.isSell }.count
+        let buyCount = signals.filter { if case .strongBuy = $0 { return true }; return false }.count
+        let sellCount = signals.filter { if case .strongSell = $0 { return true }; return false }.count
         
         // Base Context
         var finalContext = SignalContext(
@@ -247,12 +247,12 @@ actor SignalEngine {
         
         // If Price > VWAP, Bullish Bias
         if price > vwap {
-            if signal.isBuy { bias = 0.10 } // Trend following bonus
-            if signal.isSell { bias = -0.10 } // Counter-trend penalty
+            if case .strongBuy = signal { bias = 0.10 } // Trend following bonus
+            if case .strongSell = signal { bias = -0.10 } // Counter-trend penalty
         } else {
             // Price < VWAP, Bearish Bias
-            if signal.isSell { bias = 0.10 } // Trend following bonus
-            if signal.isBuy { bias = -0.10 } // Counter-trend penalty
+            if case .strongSell = signal { bias = 0.10 } // Trend following bonus
+            if case .strongBuy = signal { bias = -0.10 } // Counter-trend penalty
         }
         
         switch signal {

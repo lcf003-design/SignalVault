@@ -132,6 +132,11 @@ class PortfolioViewModel: ObservableObject {
         self.aiDailyPL = projectedAIGains
         self.dailyAlpha = self.totalPnL - self.aiDailyPL
         
+        // Discipline Audit: Decrease score for manual overrides (Simulated)
+        // In valid app: count distinct 'Positions' where manualOverride == true
+        let overrides = 2 // Mock
+        self.disciplineRating = max(0, 100 - (overrides * 5))
+        
         // 4. Fetch Portfolio News
         // Get symbols from context
         if let context = modelContext {
@@ -139,10 +144,13 @@ class PortfolioViewModel: ObservableObject {
             if let positions = try? context.fetch(descriptor) {
                 let symbols = positions.map { $0.symbol }
                 if !symbols.isEmpty {
-                     // Fetch specific news
-                     let allNews = await sentimentService.fetchSentiment(for: symbols.first ?? "SPY") // Mock single fetch
-                     // In real app, batch fetch.
-                     self.portfolioNews = allNews.headlines
+                     // Fetch specific news for the top 3 holdings
+                     var combinedNews: [NewsItem] = []
+                     for symbol in symbols.prefix(3) {
+                         let news = await sentimentService.fetchSentiment(for: symbol)
+                         combinedNews.append(contentsOf: news.headlines)
+                     }
+                     self.portfolioNews = combinedNews.sorted { $0.sentimentScore < $1.sentimentScore } // Show risks first
                 } else {
                     self.portfolioNews = []
                 }

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 actor MacroService {
     
@@ -75,11 +76,11 @@ struct EconomicEvent: Identifiable, Hashable, Sendable {
     enum EventImpact: String, Sendable {
         case high, medium, low
         
-        var color: String {
+        var color: Color {
             switch self {
-            case .high: return "red"
-            case .medium: return "orange"
-            case .low: return "yellow"
+            case .high: return .red
+            case .medium: return .orange
+            case .low: return .yellow
             }
         }
     }
