@@ -186,7 +186,7 @@ class PortfolioViewModel: ObservableObject {
         quoteTask = Task {
             do {
                 // Ensure connection
-                try? await service.connect()
+                try await service.connect()
                 let stream = await service.streamQuotes(for: symbols)
                 
                 for await tick in stream {

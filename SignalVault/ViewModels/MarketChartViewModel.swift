@@ -59,9 +59,9 @@ class MarketChartViewModel {
             self.marketService = service
         } else {
             // Auto-switch to Live if Key is present
-            if Secrets.polygonAPIKey != "YOUR_POLYGON_API_KEY" && !Secrets.polygonAPIKey.isEmpty {
+            if !Secrets.alpacaAPIKeyID.isEmpty {
                 self.marketService = LiveMarketService()
-                print("🚀 LIVE DATA ACTIVATED (Polygon.io)")
+                print("🚀 LIVE DATA ACTIVATED (Alpaca)")
             } else {
                 self.marketService = MockMarketService()
                 print("⚠️ No API Key found in Secrets.swift. Using MOCK DATA.")

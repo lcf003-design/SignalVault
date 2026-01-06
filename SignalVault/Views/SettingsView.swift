@@ -7,6 +7,7 @@ struct SettingsView: View {
     
     // API Key State
     @State private var apiKeyInput: String = ""
+    @State private var secretInput: String = ""
     
     // Simulation Settings
     @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false
@@ -36,26 +37,35 @@ struct SettingsView: View {
                 }
                 
                 // Section 2: API Configuration
-                Section("Data Provider") {
+                Section("Data Provider: Alpaca") {
                     VStack(alignment: .leading) {
-                        Text("Polygon.io API Key")
+                        Text("Alpaca Key ID")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         
-                        SecureField("Enter your API Key", text: $apiKeyInput)
-                            .textContentType(.password)
+                        TextField("Enter Key ID (e.g., PK...)", text: $apiKeyInput)
+                            .textContentType(.username)
+                            .autocorrectionDisabled()
+                            .textInputAutocapitalization(.characters)
                             .onSubmit {
-                                Secrets.polygonAPIKey = apiKeyInput
+                                Secrets.alpacaAPIKeyID = apiKeyInput
                             }
                     }
                     
-                    if apiKeyInput != "wANBaTZQHpr3h8T9BjrOpRpiCb9W20S1" && !apiKeyInput.isEmpty {
-                         Button("Restore Default Key") {
-                             apiKeyInput = ""
-                             Secrets.polygonAPIKey = "" // Resets to default
-                         }
-                         .foregroundStyle(.red)
+                    VStack(alignment: .leading) {
+                        Text("Alpaca Secret Key")
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                        
+                        SecureField("Enter Secret Key", text: $secretInput)
+                            .textContentType(.password)
+                            .onSubmit {
+                                Secrets.alpacaSecretKey = secretInput
+                            }
                     }
+                    
+                    Link("Get Free API Keys", destination: URL(string: "https://alpaca.markets")!)
+                        .font(.caption)
                 }
                 
                 // Section 3: Social & Privacy (Mission 23)
@@ -126,11 +136,9 @@ struct SettingsView: View {
             .addKeyboardDoneButton()
             .hideKeyboardOnTap()
             .onAppear {
-                // Pre-fill input if it's not default
-                let current = Secrets.polygonAPIKey
-                if current != "wANBaTZQHpr3h8T9BjrOpRpiCb9W20S1" {
-                    apiKeyInput = current
-                }
+                // Pre-fill input
+                apiKeyInput = Secrets.alpacaAPIKeyID
+                secretInput = Secrets.alpacaSecretKey
             }
         }
     }

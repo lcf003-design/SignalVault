@@ -1,11 +1,13 @@
 import Foundation
 
 class LiveMarketService: MarketDataProvider {
-    private let actor = PolygonSocketActor.shared
-    private let apiKey: String
+    private let actor = AlpacaSocketActor.shared
+    private let apiKeyID: String
+    private let secretKey: String
     
-    init(apiKey: String = Secrets.polygonAPIKey) {
-        self.apiKey = apiKey
+    init(keyID: String = Secrets.alpacaAPIKeyID, secret: String = Secrets.alpacaSecretKey) {
+        self.apiKeyID = keyID
+        self.secretKey = secret
     }
     
     func connect() async throws {
@@ -20,16 +22,15 @@ class LiveMarketService: MarketDataProvider {
             
             // Wait for connection to stabilize then auth/sub
             try? await Task.sleep(for: .seconds(1))
-            await actor.subscribe(symbols: symbols, apiKey: apiKey)
+            await actor.subscribe(symbols: symbols, keyID: apiKeyID, secretKey: secretKey)
         }
         
         return stream
     }
     
     func fetchOptionChain(for symbol: String) async throws -> [OptionContract] {
-        // TODO: Implement Polygon Option Chain API
-        // For now, return empty or mock structure to satisfy protocol
-        print("⚠️ Live Option Chain not implemented yet. Using Mock fallback logic if needed.")
+        // TODO: Implement Alpaca Options API (if upgraded to paid tier)
+        print("⚠️ Alpaca Options not available on Free Tier.")
         return []
     }
 }
