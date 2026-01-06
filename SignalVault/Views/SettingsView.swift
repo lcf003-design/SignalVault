@@ -12,6 +12,9 @@ struct SettingsView: View {
     // Simulation Settings
     @AppStorage("isRealisticSlippageEnabled") private var isRealisticSlippageEnabled = false
     
+    // UI State
+    @State private var isCredentialsSaved = false
+    
     // System Health (Mocked for now, but wired for future logic)
     @State private var isSocketConnected = true
     @State private var isCloudSyncActive = true
@@ -66,6 +69,29 @@ struct SettingsView: View {
                     
                     Link("Get Free API Keys", destination: URL(string: "https://alpaca.markets")!)
                         .font(.caption)
+                    
+                    Button {
+                        Secrets.alpacaAPIKeyID = apiKeyInput
+                        Secrets.alpacaSecretKey = secretInput
+                        HapticManager.shared.playSuccess()
+                        isCredentialsSaved = true
+                        
+                        // Reset message after delay
+                        Task {
+                            try? await Task.sleep(for: .seconds(2))
+                            isCredentialsSaved = false
+                        }
+                    } label: {
+                        HStack {
+                            Text(isCredentialsSaved ? "Credentials Saved" : "Save Credentials")
+                            if isCredentialsSaved {
+                                Image(systemName: "checkmark.circle.fill")
+                            }
+                        }
+                        .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(.borderedProminent)
+                    .tint(isCredentialsSaved ? .green : .blue)
                 }
                 
                 // Section 3: Social & Privacy (Mission 23)

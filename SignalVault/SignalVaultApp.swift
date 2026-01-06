@@ -8,28 +8,35 @@ struct SignalVaultApp: App {
         let modelConfiguration = ModelConfiguration(
             schema: schema,
             isStoredInMemoryOnly: false,
-            cloudKitDatabase: .none // Mission 9 Disabled for Sandbox iteration
+            cloudKitDatabase: .none
         )
-
 
         do {
             return try ModelContainer(for: schema, configurations: [modelConfiguration])
         } catch {
-            fatalError("Could not create ModelContainer: \(error)")
+            print("⚠️ SwiftData Error: \(error). Attempting Destructive Reset...")
+            // Fallback: Delete store and recreate (Dev only)
+             let url = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!.appending(path: "default.store")
+             try? FileManager.default.removeItem(at: url)
+             try? FileManager.default.removeItem(at: url.appendingPathExtension("shm"))
+             try? FileManager.default.removeItem(at: url.appendingPathExtension("wal"))
+             
+             do {
+                 return try ModelContainer(for: schema, configurations: [modelConfiguration])
+             } catch {
+                 fatalError("Could not create ModelContainer after reset: \(error)")
+             }
         }
     }()
 
     // Shared Market Service
     @State private var marketService: MarketDataProvider = {
-        // Force Mock for testing Mission 13 without paid Polygon subscription
-        return MockMarketService()
-        /*
-        if Secrets.polygonAPIKey != "YOUR_POLYGON_API_KEY" && !Secrets.polygonAPIKey.isEmpty {
+        // Mission 43: Auto-Switch to Alpaca
+        if !Secrets.alpacaAPIKeyID.isEmpty {
             return LiveMarketService()
         } else {
             return MockMarketService()
         }
-        */
     }()
     
     // Risk Monitor
