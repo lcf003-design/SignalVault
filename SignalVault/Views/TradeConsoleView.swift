@@ -29,6 +29,28 @@ struct TradeConsoleView: View {
     var body: some View {
         VStack(spacing: 12) {
             
+            // Mission 42: Safety Lock Alert
+            if isSafetyLockTriggered {
+                HStack(spacing: 8) {
+                    Image(systemName: "lock.shield.fill")
+                        .font(.title2)
+                        .foregroundStyle(.white)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("SAFETY LOCK ACTIVE")
+                            .font(.caption.bold())
+                            .foregroundStyle(.white)
+                        Text("Daily Loss Limit Reached. Trading Disabled.")
+                            .font(.caption2)
+                            .foregroundStyle(.white.opacity(0.8))
+                    }
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background(Color.red)
+                .cornerRadius(12)
+                .padding(.horizontal)
+            }
+            
             // Mission 36: VWAP Status Line
             if let vwap = vwap, let dist = vwapDistance {
                 HStack(spacing: 12) {
@@ -169,8 +191,8 @@ struct TradeConsoleView: View {
                         .foregroundStyle(.white)
                         .clipShape(RoundedRectangle(cornerRadius: 12))
                     }
-                    .disabled(!isTradeValid(account: account) || activeSignal == nil)
-                    .opacity((!isTradeValid(account: account) || activeSignal == nil) ? 0.3 : 1.0)
+                    .disabled(!isTradeValid(account: account) || activeSignal == nil || isSafetyLockTriggered) // Mission 42
+                    .opacity((!isTradeValid(account: account) || activeSignal == nil || isSafetyLockTriggered) ? 0.3 : 1.0)
                 }
             }
             .padding(.horizontal)
@@ -254,11 +276,19 @@ struct TradeConsoleView: View {
     }
     
     private var buttonColor: Color {
+        if isSafetyLockTriggered { return .gray } // Mission 42
         guard let signal = activeSignal else { return .gray }
         switch signal {
         case .strongBuy: return .green
         case .strongSell: return .red
         case .neutral: return .gray
         }
+    }
+    
+    // Mission 42: Helper
+    private var isSafetyLockTriggered: Bool {
+        guard let account = accounts.first, account.isSafetyLockEnabled else { return false }
+        let limit = account.startingCapital * account.maxDailyLossPercent
+        return account.dailyRealizedPnL <= -limit
     }
 }

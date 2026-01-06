@@ -3,6 +3,7 @@ import SwiftData
 
 struct SettingsView: View {
     @Environment(\.modelContext) private var modelContext
+    @Query private var accounts: [Account] // Mission 42
     
     // API Key State
     @State private var apiKeyInput: String = ""
@@ -66,6 +67,32 @@ struct SettingsView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+
+                // Mission 42: Safety Lock (The Guardian)
+                if let account = accounts.first {
+                    Section("Safety Lock (The Guardian)") {
+                        Toggle("Max Daily Loss Protection", isOn: Bindable(account).isSafetyLockEnabled)
+                            .tint(.red)
+                        
+                        if account.isSafetyLockEnabled {
+                            VStack(alignment: .leading) {
+                                Stepper(value: Bindable(account).maxDailyLossPercent, in: 0.01...0.20, step: 0.01) {
+                                    HStack {
+                                        Text("Max Daily Loss")
+                                        Spacer()
+                                        Text(account.maxDailyLossPercent, format: .percent.precision(.fractionLength(1)))
+                                            .fontWeight(.bold)
+                                            .foregroundStyle(.red)
+                                    }
+                                }
+                                Text("Trading will be disabled if session loss exceeds \(account.startingCapital * account.maxDailyLossPercent, format: .currency(code: "USD")).")
+                                    .font(.caption)
+                                    .foregroundStyle(.secondary)
+                            }
+                        }
+                    }
+                }
+
                 
                 // Section 4: Simulation Control
                 Section("Sandbox Configuration") {

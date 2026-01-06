@@ -44,7 +44,7 @@ struct ContentView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             // Tab 1: Home (Mission 24)
-            PortfolioSummaryView(selectedTab: $selectedTab)
+            PortfolioSummaryView(selectedTab: $selectedTab, marketService: marketService)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }

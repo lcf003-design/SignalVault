@@ -25,7 +25,12 @@ class PortfolioViewModel: ObservableObject {
     
     // Dependencies
     private var modelContext: ModelContext?
+    private var marketService: MarketDataProvider? // Mission 41
     private let sentimentService = SentimentService()
+    
+    // Live Data
+    private var livePrices: [String: Double] = [:]
+    private var quoteTask: Task<Void, Never>?
     // MarketScannerService is an actor, we'll access it via a task
     
     init() {}
@@ -33,6 +38,12 @@ class PortfolioViewModel: ObservableObject {
     func setContext(_ context: ModelContext) {
         self.modelContext = context
         calculateMetrics()
+    }
+    
+    // Mission 41: Inject Market Service and Start Monitoring
+    func configure(marketService: MarketDataProvider) {
+        self.marketService = marketService
+        monitorPortfolio()
     }
     
     func calculateMetrics() {
@@ -58,7 +69,7 @@ class PortfolioViewModel: ObservableObject {
             let totalValue = cash + invested
             
             self.totalEquity = totalValue
-            self.totalPnL = 0.0 // Placeholder until Live Price integration
+            self.totalPnL = self.calculateLivePnL(positions: positions) // Mission 41
             
             // 2. Allocation Logic
             var segments: [AllocationSegment] = []
@@ -156,5 +167,74 @@ class PortfolioViewModel: ObservableObject {
                 }
             }
         }
+    }
+    
+    // Mission 41: Live Portfolio Monitoring
+    private func monitorPortfolio() {
+        // Cancel existing task to prevent duplicates
+        quoteTask?.cancel()
+        
+        // Get symbols from context
+        guard let context = modelContext else { return }
+        
+        let descriptor = FetchDescriptor<Position>(predicate: #Predicate { $0.isOpen })
+        guard let positions = try? context.fetch(descriptor) else { return }
+        let symbols = Array(Set(positions.map { $0.symbol })) // Unique symbols
+        
+        guard !symbols.isEmpty, let service = marketService else { return }
+        
+        quoteTask = Task {
+            do {
+                // Ensure connection
+                try? await service.connect()
+                let stream = await service.streamQuotes(for: symbols)
+                
+                for await tick in stream {
+                    // Update Cache
+                    self.livePrices[tick.symbol] = tick.price
+                    
+                    // Recalculate Metrics Reactively
+                    self.recalculateLiveEquity(positions: positions)
+                }
+            } catch {
+                print("Portfolio Stream Error: \(error)")
+            }
+        }
+    }
+    
+    private func recalculateLiveEquity(positions: [Position]) {
+         guard let context = modelContext else { return }
+         // We need Account Balance (Cash)
+         let accountDescriptor = FetchDescriptor<Account>()
+         guard let account = try? context.fetch(accountDescriptor).first else { return }
+         
+         let cash = account.currentBalance
+         
+         // Calculate Holdings Value using Live Prices where available
+         var holdingsValue: Double = 0.0
+         var totalOpenPnL: Double = 0.0
+         
+         for pos in positions {
+             let currentPrice = livePrices[pos.symbol] ?? pos.entryPrice // Fallback to entry if no live data
+             let val = pos.quantity * currentPrice
+             holdingsValue += val
+             
+             // P&L
+             let pnl = (currentPrice - pos.entryPrice) * pos.quantity
+             totalOpenPnL += pnl
+         }
+         
+         self.totalEquity = cash + holdingsValue
+         self.totalPnL = totalOpenPnL
+    }
+    
+    // Helper for initial calculation
+    private func calculateLivePnL(positions: [Position]) -> Double {
+        var totalOpenPnL: Double = 0.0
+        for pos in positions {
+            let currentPrice = livePrices[pos.symbol] ?? pos.entryPrice
+            totalOpenPnL += (currentPrice - pos.entryPrice) * pos.quantity
+        }
+        return totalOpenPnL
     }
 }

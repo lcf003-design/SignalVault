@@ -6,6 +6,8 @@ struct PortfolioSummaryView: View {
     @Environment(\.modelContext) private var modelContext
     @StateObject private var viewModel = PortfolioViewModel()
     @Binding var selectedTab: Int // To navigate to Trade tab
+    var marketService: MarketDataProvider // Mission 41
+    
     
     var body: some View {
         NavigationStack {
@@ -42,6 +44,7 @@ struct PortfolioSummaryView: View {
                             Text(viewModel.totalEquity, format: .currency(code: "USD"))
                                 .font(.system(size: 40, weight: .heavy, design: .rounded))
                                 .foregroundStyle(.white)
+                                .contentTransition(.numericText()) // Mission 41: Smooth Ticking
                                 .shadow(color: .black.opacity(0.1), radius: 5, x: 0, y: 2)
                         }
                         .padding(.vertical, 40)
@@ -156,6 +159,7 @@ struct PortfolioSummaryView: View {
             }
             .task {
                 viewModel.setContext(modelContext)
+                viewModel.configure(marketService: marketService) // Mission 41
                 await viewModel.refreshViewData()
             }
         }

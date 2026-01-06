@@ -16,10 +16,22 @@ enum SchemaV1: VersionedSchema {
         var startingCapital: Double
         var totalProfit: Double
         
+        // Mission 42: Safety Lock
+        var maxDailyLossPercent: Double // e.g. 0.02 for 2%
+        var dailyRealizedPnL: Double
+        var lastResetDate: Date?
+        var isSafetyLockEnabled: Bool // Mission 42
+        
         init(startingCapital: Double = 100_000.0) {
             self.startingCapital = startingCapital
             self.currentBalance = startingCapital
             self.totalProfit = 0.0
+            
+            // Defaults
+            self.maxDailyLossPercent = 0.05 // 5% default
+            self.dailyRealizedPnL = 0.0
+            self.lastResetDate = Date()
+            self.isSafetyLockEnabled = false
         }
     }
     

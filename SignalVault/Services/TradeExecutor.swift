@@ -13,6 +13,19 @@ actor TradeExecutor {
         let descriptor = FetchDescriptor<Position>(predicate: #Predicate { $0.symbol == symbol && $0.isOpen == true })
         let existingPositions = try modelContext.fetch(descriptor)
         
+        // Mission 42: Safety Lock Check
+        let accountDescriptor = FetchDescriptor<Account>(predicate: #Predicate { $0.id == accountID })
+        guard let account = try modelContext.fetch(accountDescriptor).first else { throw TradeError.accountNotFound }
+        
+        resetDailyMetricsIfNeeded(account: account)
+        
+        let lossLimit = account.startingCapital * account.maxDailyLossPercent
+        // dailyRealizedPnL is negative for losses. e.g. -500. Limit is 1000.
+        // If -500 < -1000 (False). If -1100 < -1000 (True).
+        if account.isSafetyLockEnabled && account.dailyRealizedPnL <= -lossLimit {
+             throw TradeError.safetyLockActive(loss: account.dailyRealizedPnL, limit: lossLimit)
+        }
+        
         // 2. Identify Opposing Positions
         // If we represent a BUY (Long), we look for Shorts to cover.
         // If we represent a SELL (Short), we look for Longs to sell.
@@ -36,8 +49,9 @@ actor TradeExecutor {
         // 4. If Quantity Remains, Open New Position
         if quantityRemaining > 0 {
             // Fetch Account to ensure funds (re-fetch to be safe)
-            let accDescriptor = FetchDescriptor<Account>(predicate: #Predicate { $0.id == accountID })
-            guard let account = try modelContext.fetch(accDescriptor).first else { throw TradeError.accountNotFound }
+            // guard let account = try modelContext.fetch(accDescriptor).first else { throw TradeError.accountNotFound }
+            // Already fetched above for Safety Check
+
             
             // Calculate Execution Price
             let executionPrice = isLong ? price * (1 + slippage) : price * (1 - slippage)
@@ -88,6 +102,8 @@ actor TradeExecutor {
             throw TradeError.accountNotFound
         }
         
+        resetDailyMetricsIfNeeded(account: account) // Ensure we're tracking for today
+        
         // 3. Apply Slippage to Exit
         let executionPrice: Double
         if position.isLong {
@@ -115,8 +131,28 @@ actor TradeExecutor {
         position.exitDate = Date()
         position.realizedPnL = pnl
         
+        // Mission 42: Update Daily PnL
+        account.dailyRealizedPnL += pnl
+        
         try modelContext.save()
         print("✅ Position Closed: \(position.symbol) @ \(executionPrice) [Reason: \(reason), PnL: \(String(format: "%.2f", pnl))]")
+        print("✅ Position Closed: \(position.symbol) @ \(executionPrice) [Reason: \(reason), PnL: \(String(format: "%.2f", pnl))]")
+    }
+    
+    // Mission 42: Daily Reset Logic
+    private func resetDailyMetricsIfNeeded(account: Account) {
+        let calendar = Calendar.current
+        if let lastReset = account.lastResetDate {
+            if !calendar.isDateInToday(lastReset) {
+                // New Day
+                account.dailyRealizedPnL = 0.0
+                account.lastResetDate = Date()
+                print("🔄 Daily P&L Reset for Safety Lock")
+            }
+        } else {
+            // First run
+            account.lastResetDate = Date()
+        }
     }
 }
 
@@ -125,4 +161,5 @@ enum TradeError: Error {
     case insufficientFunds
     case positionNotFound
     case positionAlreadyClosed
+    case safetyLockActive(loss: Double, limit: Double) // Mission 42
 }
