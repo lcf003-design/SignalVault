@@ -42,8 +42,8 @@ struct PositionDetailView: View {
                     }
                     
                     // 3. The Chart
-                    // Reuse MarketChartView with our local VM
-                    MarketChartView(viewModel: chartViewModel)
+                    // Reuse MarketChartView with our local VM + Target Overlay
+                    MarketChartView(viewModel: chartViewModel, targetPosition: position)
                         .frame(height: 300)
                         .padding(.horizontal)
                     
