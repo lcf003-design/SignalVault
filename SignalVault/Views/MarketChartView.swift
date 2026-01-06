@@ -415,27 +415,36 @@ struct MarketChartView: View {
     
     @ChartContentBuilder
     private func signalsLayer() -> some ChartContent {
-        // Mission 38: Live Signal Overlay
-        // We currently visualize the ACTIVE signal on the current candle.
-        if let active = viewModel.activeSignal, let last = viewModel.candles.last {
-            if case .strongBuy(_, _) = active {
-                PointMark(x: .value("Time", last.timestamp), y: .value("Price", last.low * 0.9995))
-                    .foregroundStyle(.clear)
-                    .annotation(position: .bottom) {
-                        Image(systemName: "arrowtriangle.up.fill")
-                            .foregroundStyle(.green)
-                            .font(.title3)
-                            .shadow(color: .green.opacity(0.5), radius: 4)
-                    }
-            } else if case .strongSell(_, _) = active {
-                 PointMark(x: .value("Time", last.timestamp), y: .value("Price", last.high * 1.0005))
-                     .foregroundStyle(.clear)
-                     .annotation(position: .top) {
-                         Image(systemName: "arrowtriangle.down.fill")
-                             .foregroundStyle(.red)
-                             .font(.title3)
-                             .shadow(color: .red.opacity(0.5), radius: 4)
-                     }
+        // Mission 39: Signal History Persistence
+        // Iterate through all historical signals and plot Arrows
+        ForEach(viewModel.signalHistory) { event in
+            // Buy Signals (Up Arrow)
+            if case .strongBuy = event.signal {
+                PointMark(
+                    x: .value("Time", event.timestamp),
+                    y: .value("Price", event.price * 0.9995)
+                )
+                .foregroundStyle(.clear)
+                .annotation(position: .bottom) {
+                    Image(systemName: "arrowtriangle.up.fill")
+                        .foregroundStyle(.green)
+                        .font(.title3)
+                        .shadow(color: .green.opacity(0.5), radius: 2)
+                }
+            }
+            // Sell Signals (Down Arrow)
+            else if case .strongSell = event.signal {
+                PointMark(
+                    x: .value("Time", event.timestamp),
+                    y: .value("Price", event.price * 1.0005)
+                )
+                .foregroundStyle(.clear)
+                .annotation(position: .top) {
+                    Image(systemName: "arrowtriangle.down.fill")
+                        .foregroundStyle(.red)
+                        .font(.title3)
+                        .shadow(color: .red.opacity(0.5), radius: 2)
+                }
             }
         }
     }

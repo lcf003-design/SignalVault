@@ -8,7 +8,8 @@ class MarketChartViewModel {
     // Data Buffers
     var ticks: [MarketTick] = []
     var candles: [Candle] = [] // Mission 38
-    var signals: [TradeSignal] = []
+    var signals: [TradeSignal] = [] // Legacy Buffer
+    var signalHistory: [SignalEvent] = [] // Mission 39: Persistent History
     
     // UI State
     var currentPrice: Double = 0.0
@@ -84,6 +85,7 @@ class MarketChartViewModel {
         // Mission 12: Reset AI Engine
         Task {
             await engine.reset()
+            self.signalHistory.removeAll()
             start()
         }
     }
@@ -136,6 +138,10 @@ class MarketChartViewModel {
                 if let newSignal = context.tradeSignal {
                     self.signals.append(newSignal)
                     self.activeSignal = newSignal
+                    
+                    // Mission 39: History
+                    let event = SignalEvent(signal: newSignal, timestamp: tick.timestamp, price: tick.price)
+                    self.signalHistory.append(event)
                     
                     // Audio Announcement (Mission 34)
                     switch newSignal {

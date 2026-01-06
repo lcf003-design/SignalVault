@@ -242,3 +242,11 @@ struct Candle: Identifiable, Sendable, Hashable {
     
     var isBullish: Bool { close >= open }
 }
+
+// Mission 39: Signal History
+struct SignalEvent: Identifiable, Sendable {
+    let id = UUID()
+    let signal: TradeSignal
+    let timestamp: Date
+    let price: Double
+}
