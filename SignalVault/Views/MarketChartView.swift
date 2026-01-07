@@ -80,13 +80,32 @@ struct MarketChartView: View {
             HStack(spacing: 0) {
                 // Main Price Chart
                 Chart {
-                    priceLineLayer()
+                    MarketChartLayers.priceLineLayer(candles: viewModel.candles, wickWidth: wickWidth, candleWidth: candleWidth)
+                    
                     targetMarkersLayer()
-                    oracleConeLayer()
-                    institutionalLevelsLayer()
-                    eventMarkersLayer()
+                    
+                    MarketChartLayers.oracleConeLayer(
+                        projection: viewModel.projection,
+                        lastDate: viewModel.ticks.last?.timestamp,
+                        currentPrice: viewModel.currentPrice,
+                        alert: viewModel.chartAlert
+                    )
+                    
+                    MarketChartLayers.institutionalLevelsLayer(
+                        vwap: viewModel.vwap,
+                        orbHigh: viewModel.openingRangeHigh,
+                        orbLow: viewModel.openingRangeLow,
+                        startTime: viewModel.ticks.first?.timestamp,
+                        yesterdayHigh: viewModel.yesterdayHigh,
+                        yesterdayLow: viewModel.yesterdayLow
+                    )
+                    
+                    MarketChartLayers.eventMarkersLayer(events: viewModel.economicEvents)
+                    
                     flashOverlayLayer()
-                    signalsLayer()
+                    
+                    MarketChartLayers.signalsLayer(signals: viewModel.signals)
+                    
                     scrubbingLayer()
                 }
                 // Mission 27: Adaptive Y-Scale for Targets
@@ -302,30 +321,22 @@ struct MarketChartView: View {
          return (price * 20).rounded() / 20
     }
     
-    // MARK: - Chart Builders
+
+    
     @ChartContentBuilder
-    private func priceLineLayer() -> some ChartContent {
-        ForEach(viewModel.candles) { candle in
-            // Wick (High-Low)
-            RectangleMark(
-                x: .value("Time", candle.timestamp),
-                yStart: .value("Low", candle.low),
-                yEnd: .value("High", candle.high),
-                width: .fixed(wickWidth)
-            )
-            .foregroundStyle(candle.isBullish ? .green : .red)
-            
-            // Body (Open-Close)
-            RectangleMark(
-                x: .value("Time", candle.timestamp),
-                yStart: .value("Open", candle.open),
-                yEnd: .value("Close", candle.close),
-                width: .fixed(candleWidth)
-            )
-            .foregroundStyle(candle.isBullish ? .green : .red)
+    private func flashOverlayLayer() -> some ChartContent {
+        if let signal = viewModel.activeSignal {
+            RuleMark(y: .value("Flash", 0))
+                .annotation(position: .overlay) {
+                    RoundedRectangle(cornerRadius: 0)
+                        .strokeBorder(getSignalColor(signal), lineWidth: flashColor != nil ? 4 : 0)
+                        .ignoresSafeArea().opacity(flashColor != nil ? 1.0 : 0.0)
+                        .animation(.easeInOut(duration: 0.2), value: flashColor)
+                }
         }
     }
     
+    // MARK: - State-Dependent Layers (Kept Local)
     @ChartContentBuilder
     private func targetMarkersLayer() -> some ChartContent {
         if let position = targetPosition {
@@ -356,117 +367,6 @@ struct MarketChartView: View {
                         Text("SL: \(sl.formatted(.currency(code: "USD")))")
                             .font(.caption2.bold()).foregroundStyle(.red).scaleEffect(draggingTarget == .sl ? 1.2 : 1.0)
                     }
-            }
-        }
-    }
-    
-    @ChartContentBuilder
-    private func oracleConeLayer() -> some ChartContent {
-        if let projection = viewModel.projection, let lastDate = viewModel.ticks.last?.timestamp {
-            let interval: TimeInterval = 0.5
-            ForEach(projection.points) { point in
-                let futureDate = lastDate.addingTimeInterval(interval * Double(point.indexOffset))
-                AreaMark(x: .value("Time", futureDate), yStart: .value("Lower 2SD", point.lower2SD), yEnd: .value("Upper 2SD", point.upper2SD))
-                    .foregroundStyle(projection.isReliable ? .blue.opacity(0.1) : .gray.opacity(0.1))
-                AreaMark(x: .value("Time", futureDate), yStart: .value("Lower 1SD", point.lower1SD), yEnd: .value("Upper 1SD", point.upper1SD))
-                    .foregroundStyle(projection.isReliable ? .blue.opacity(0.2) : .gray.opacity(0.2))
-                LineMark(x: .value("Time", futureDate), y: .value("Projected", point.price))
-                    .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.5))
-            }
-        }
-        if let alert = viewModel.chartAlert {
-            RuleMark(y: .value("Alert", viewModel.currentPrice))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.red)
-                .annotation(position: .top) {
-                    Text(alert).font(.caption.bold()).foregroundStyle(.white).padding(6).background(Color.red.gradient).cornerRadius(8).shadow(radius: 2)
-                }
-        }
-    }
-    
-    @ChartContentBuilder
-    private func institutionalLevelsLayer() -> some ChartContent {
-        if let vwap = viewModel.vwap {
-            RuleMark(y: .value("VWAP", vwap))
-                .lineStyle(StrokeStyle(lineWidth: 2, dash: [5, 5])).foregroundStyle(.cyan.opacity(0.8))
-                .annotation(position: .trailing, alignment: .center) {
-                    Text("VWAP").font(.caption2.bold()).foregroundStyle(.cyan).padding(4).background(.ultraThinMaterial).cornerRadius(4)
-                }
-        }
-        if let orbH = viewModel.openingRangeHigh, let orbL = viewModel.openingRangeLow {
-            if let start = viewModel.ticks.first?.timestamp {
-                RectangleMark(xStart: .value("ORB Start", start), xEnd: .value("ORB End", start.addingTimeInterval(900)), yStart: .value("High", orbH), yEnd: .value("Low", orbL))
-                    .foregroundStyle(.gray.opacity(0.1))
-            }
-            RuleMark(y: .value("ORB High", orbH)).lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.gray).annotation(position: .leading) { Text("ORB H").font(.caption2).foregroundStyle(.secondary) }
-            RuleMark(y: .value("ORB Low", orbL)).lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(.gray).annotation(position: .leading) { Text("ORB L").font(.caption2).foregroundStyle(.secondary) }
-        }
-        if let yh = viewModel.yesterdayHigh {
-            RuleMark(y: .value("YH", yh)).lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.6)).annotation(position: .trailing) { Text("YH").font(.caption2).foregroundStyle(.secondary) }
-        }
-        if let yl = viewModel.yesterdayLow {
-            RuleMark(y: .value("YL", yl)).lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 4])).foregroundStyle(.white.opacity(0.6)).annotation(position: .trailing) { Text("YL").font(.caption2).foregroundStyle(.secondary) }
-        }
-    }
-    
-    @ChartContentBuilder
-    private func eventMarkersLayer() -> some ChartContent {
-        ForEach(viewModel.economicEvents) { event in
-            RuleMark(x: .value("Event", event.date))
-                .lineStyle(StrokeStyle(lineWidth: 1, dash: [2])).foregroundStyle(event.impact.color)
-                .annotation(position: .top, alignment: .center) {
-                    VStack(spacing: 2) {
-                        Image(systemName: "calendar.badge.exclamationmark").foregroundStyle(.white).font(.caption2)
-                        Text(event.title).font(.system(size: 8, weight: .bold)).foregroundStyle(.white).multilineTextAlignment(.center)
-                    }.padding(4).background(event.impact.color.gradient).cornerRadius(4).shadow(radius: 2)
-                }
-        }
-    }
-    
-    @ChartContentBuilder
-    private func flashOverlayLayer() -> some ChartContent {
-        if let signal = viewModel.activeSignal {
-            RuleMark(y: .value("Flash", 0))
-                .annotation(position: .overlay) {
-                    RoundedRectangle(cornerRadius: 0)
-                        .strokeBorder(getSignalColor(signal), lineWidth: flashColor != nil ? 4 : 0)
-                        .ignoresSafeArea().opacity(flashColor != nil ? 1.0 : 0.0)
-                        .animation(.easeInOut(duration: 0.2), value: flashColor)
-                }
-        }
-    }
-    
-    @ChartContentBuilder
-    private func signalsLayer() -> some ChartContent {
-        // Mission 39: Signal History Persistence
-        // Iterate through all historical signals and plot Arrows
-        ForEach(viewModel.signals) { event in
-            // Buy Signals (Up Arrow)
-            if case .strongBuy = event.type {
-                PointMark(
-                    x: .value("Time", event.timestamp),
-                    y: .value("Price", event.price * 0.9995)
-                )
-                .foregroundStyle(.clear)
-                .annotation(position: .bottom) {
-                    Image(systemName: "arrowtriangle.up.fill")
-                        .foregroundStyle(.green)
-                        .font(.title3)
-                        .shadow(color: .green.opacity(0.5), radius: 2)
-                }
-            }
-            // Sell Signals (Down Arrow)
-            else if case .strongSell = event.type {
-                PointMark(
-                    x: .value("Time", event.timestamp),
-                    y: .value("Price", event.price * 1.0005)
-                )
-                .foregroundStyle(.clear)
-                .annotation(position: .top) {
-                    Image(systemName: "arrowtriangle.down.fill")
-                        .foregroundStyle(.red)
-                        .font(.title3)
-                        .shadow(color: .red.opacity(0.5), radius: 2)
-                }
             }
         }
     }

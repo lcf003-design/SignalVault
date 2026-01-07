@@ -13,6 +13,7 @@ struct DiscoveryCarousel: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
+        .frame(height: 220) // Constraint to prevent RBLayer explosion
     }
 }
 

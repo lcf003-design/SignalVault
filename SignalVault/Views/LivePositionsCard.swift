@@ -61,18 +61,33 @@ struct LivePositionsCard: View {
         let generator = UIImpactFeedbackGenerator(style: .heavy)
         generator.impactOccurred()
         
+        let container = modelContext.container
+        let posID = position.id
+        // Use approximate price from card if available, or just use current
+        let closePrice = currentPrice 
+        
         Task {
-            let container = modelContext.container
             let executor = TradeExecutor(modelContainer: container)
             
             do {
                 try await executor.closePosition(
-                    positionID: position.id,
-                    price: currentPrice, // Note: Using the Dashboard's current price which might be cross-asset approximate
+                    positionID: posID,
+                    price: closePrice, 
                     reason: "Context Menu Close"
                 )
+                
+                await MainActor.run {
+                    // Success Haptic
+                    UINotificationFeedbackGenerator().notificationOccurred(.success)
+                    print("✅ LivePositions: Liquidated \(posID)")
+                    // Note: SwiftData @Query should auto-update if the context saves.
+                    // TradeExecutor handles the save.
+                }
             } catch {
-                print("Failed to liquidate: \(error)")
+                await MainActor.run {
+                    UINotificationFeedbackGenerator().notificationOccurred(.error)
+                    print("❌ LivePositions: Failed to liquidate: \(error)")
+                }
             }
         }
     }

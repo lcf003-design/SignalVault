@@ -4,74 +4,7 @@ import Foundation
 
 actor SignalEngine {
     // MARK: - Core Definitions
-    enum Timeframe: CaseIterable {
-        case m1, m5, m15
-    }
-    
-    struct Candle {
-        var open: Double
-        var high: Double
-        var low: Double
-        var close: Double
-        var volume: Double
-        var startTime: Date
-    }
-    
-    // State Container for a Single Timeframe
-    class TimeframeState {
-        var candles: [Candle] = []
-        var currentCandle: Candle?
-        
-        // Technicals
-        var prevEMA12: Double?
-        var prevEMA26: Double?
-        var prevSignalLine: Double?
-        var prevRSI: Double?
-        var prevPriceHigh: Double = 0
-        var prevRSIHigh: Double = 0
-        
-        // Latest Signal
-        var latestSignal: TradeSignal = .neutral(confidence: 0.0)
-        
-        func update(price: Double, volume: Double, time: Date, interval: TimeInterval) -> Bool {
-            // Check if we need to close current candle
-            if let current = currentCandle {
-                // Simplistic time check: if time > start + interval
-                if time.timeIntervalSince(current.startTime) >= interval {
-                    // Close Candle
-                    candles.append(current)
-                    if candles.count > 100 { candles.removeFirst() }
-                    
-                    // Start New
-                    currentCandle = Candle(open: price, high: price, low: price, close: price, volume: volume, startTime: time)
-                    return true // Candle Closed
-                } else {
-                    // Update Current
-                    currentCandle?.high = max(current.high, price)
-                    currentCandle?.low = min(current.low, price)
-                    currentCandle?.close = price
-                    currentCandle?.volume += volume
-                    return false
-                }
-            } else {
-                // First Tick
-                currentCandle = Candle(open: price, high: price, low: price, close: price, volume: volume, startTime: time)
-                return false
-            }
-        }
-        
-        func reset() {
-            candles.removeAll()
-            currentCandle = nil
-            prevEMA12 = nil
-            prevEMA26 = nil
-            prevSignalLine = nil
-            prevRSI = nil
-            prevPriceHigh = 0
-            prevRSIHigh = 0
-            latestSignal = .neutral(confidence: 0.0)
-        }
-    }
+
     
     // MARK: - State
     private var states: [Timeframe: TimeframeState] = [
@@ -95,8 +28,9 @@ actor SignalEngine {
     }
     
     func reset() {
-        for state in states.values {
-            state.reset()
+        // Reset by replacing with new empty structs
+        for tf in Timeframe.allCases {
+            states[tf] = TimeframeState()
         }
         cumulativeTypicalPriceVolume = 0
         cumulativeVolume = 0
@@ -143,23 +77,32 @@ actor SignalEngine {
         var divergenceDetected = false
         
         // 1. Update All Timeframes
+        // 1. Update All Timeframes
+        // Since TimeframeState is a struct, we must mutate and re-assign
         for tf in Timeframe.allCases {
-            let state = states[tf]!
+            // Retrieve Copy
+            guard var state = states[tf] else { continue }
+            
             let interval: TimeInterval = tf == .m1 ? 60 : (tf == .m5 ? 300 : 900)
             
-            let candleClosed = state.update(price: tick.price, volume: tick.volume, time: tick.timestamp, interval: interval)
+            // Mutate Copy
+            let candleClosed = updateTimeframeState(state: &state, price: tick.price, volume: tick.volume, time: tick.timestamp, interval: interval)
             
-            // Only re-calc technicals if candle closed OR it's the 1m (for reactivity)
+            // Re-calc technicals on copy
             let analysis = analyzeState(state, config: config)
             state.latestSignal = analysis.signal
             
             // Mission 34.3: Divergence Check (Only on 5m)
             if tf == .m5 && candleClosed {
-                if checkDivergence(state: state, currentRSI: analysis.rsi) {
+                // Pass copy to helper
+                if checkDivergence(state: &state, currentRSI: analysis.rsi) {
                     print("⚠️ BEARISH DIVERGENCE DETECTED on 5m Chart!")
                     divergenceDetected = true
                 }
             }
+            
+            // Write Back to Dictionary (Value Type Update)
+            states[tf] = state
         }
         
         // 2. Consensus Engine
@@ -387,7 +330,7 @@ actor SignalEngine {
         return (.neutral(confidence: 0.5), rsi)
     }
     
-    private func checkDivergence(state: TimeframeState, currentRSI: Double?) -> Bool {
+    private func checkDivergence(state: inout TimeframeState, currentRSI: Double?) -> Bool {
         guard let rsi = currentRSI, let currentPrice = state.currentCandle?.close else { return false }
         
         // Simple Bearish Divergence: Price High > Prev Price High AND RSI High < Prev RSI High
@@ -466,5 +409,36 @@ actor SignalEngine {
         if losses == 0 { return 100.0 }
         let rs = (gains/Double(period)) / (losses/Double(period))
         return 100.0 - (100.0 / (1.0 + rs))
+    }
+    
+    // Mission 48: Local State Update Logic (Moved from Types to Actor to avoid Isolation Issues)
+    private func updateTimeframeState(state: inout TimeframeState, price: Double, volume: Double, time: Date, interval: TimeInterval) -> Bool {
+        // Check if we need to close current candle
+        if let current = state.currentCandle {
+            if time.timeIntervalSince(current.timestamp) >= interval {
+                // Close Candle
+                var closed = current
+                closed.close = price // Ensure close price matches tick
+                state.candles.append(closed)
+                
+                // Maintain Buffer (e.g., 200 candles)
+                if state.candles.count > 200 { state.candles.removeFirst() }
+                
+                // Start New
+                state.currentCandle = Candle(timestamp: time, open: price, high: price, low: price, close: price, volume: volume)
+                return true
+            } else {
+                // Update Current
+                state.currentCandle?.high = max(current.high, price)
+                state.currentCandle?.low = min(current.low, price)
+                state.currentCandle?.close = price
+                state.currentCandle?.volume += volume
+                return false
+            }
+        } else {
+            // First Tick
+            state.currentCandle = Candle(timestamp: time, open: price, high: price, low: price, close: price, volume: volume)
+            return false
+        }
     }
 }

@@ -5,6 +5,7 @@ enum AssetType: String, Codable {
     case stock
     case option
     case crypto // Mission 12
+    case forex // Mission 45
 }
 
 struct MarketTick: Sendable {

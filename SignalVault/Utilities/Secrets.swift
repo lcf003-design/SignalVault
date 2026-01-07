@@ -2,7 +2,7 @@ import Foundation
 
 enum Secrets {
     // Placeholder - Default Key
-    private static let defaultKey = "wANBaTZQHpr3h8T9BjrOpRpiCb9W20S1"
+    private static let defaultKey = "gLsSEi_3CFu0ufqRTQWPo_byasJkT2ax"
     
     // Mission 43: Alpaca Credentials
     static var alpacaAPIKeyID: String {
@@ -30,4 +30,20 @@ enum Secrets {
              }
          }
      }
+    
+    // Mission 49: Massive / Polygon Credentials
+    static var polygonAPIKey: String {
+        get {
+            let val = UserDefaults.standard.string(forKey: "user_polygon_key") ?? defaultKey
+            return val.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        set {
+            let clean = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+            if clean.isEmpty {
+                UserDefaults.standard.removeObject(forKey: "user_polygon_key")
+            } else {
+                UserDefaults.standard.set(clean, forKey: "user_polygon_key")
+            }
+        }
+    }
 }

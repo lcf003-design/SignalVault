@@ -98,13 +98,25 @@ struct MarketsListView: View {
                 ToolbarItem(placement: .topBarTrailing) {
                     HStack(spacing: 4) {
                         Circle()
-                            .fill(Color.green)
+                            .fill(scanner.status == .streaming ? Color.green : (scanner.status == .connecting ? Color.yellow : Color.red))
                             .frame(width: 6, height: 6)
-                            .opacity(Double(Int(Date().timeIntervalSince1970) % 2 == 0 ? 1 : 0))
-                            .animation(.easeInOut(duration: 0.5).repeatForever(), value: true)
-                        Text("LIVE")
+                            .opacity(isBlinking ? 1 : 0.2)
+                            .animation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true), value: isBlinking)
+                        
+                        Text(statusText)
                             .font(.caption2.bold())
                             .foregroundStyle(.secondary)
+                    }
+                    .padding(4)
+                    .background(statusColor.opacity(0.1))
+                    .clipShape(Capsule())
+                    .onTapGesture {
+                        HapticManager.shared.playToggleHaptic()
+                        scanner.stopScanning()
+                        scanner.startScanning()
+                    }
+                    .onAppear {
+                        isBlinking = true
                     }
                 }
             }
@@ -117,8 +129,28 @@ struct MarketsListView: View {
         }
     }
     
+    // Status Helpers
+    private var statusText: String {
+        switch scanner.status {
+        case .streaming: return "LIVE"
+        case .connecting: return "CONNECTING"
+        case .offline: return "OFFLINE"
+        case .disconnected: return "PAUSED"
+        }
+    }
+    
+    private var statusColor: Color {
+        switch scanner.status {
+        case .streaming: return .green
+        case .connecting: return .yellow
+        case .offline: return .red
+        case .disconnected: return .gray
+        }
+    }
+    
     // Mission 35: Filters
     @State private var selectedFilter: Filter = .all
+    @State private var isBlinking = false
     
     enum Filter: String, CaseIterable {
         case all = "All Assets"

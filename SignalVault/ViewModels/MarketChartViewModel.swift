@@ -59,9 +59,9 @@ class MarketChartViewModel {
             self.marketService = service
         } else {
             // Auto-switch to Live if Key is present
-            if !Secrets.alpacaAPIKeyID.isEmpty {
-                self.marketService = LiveMarketService()
-                print("🚀 LIVE DATA ACTIVATED (Alpaca)")
+            if !Secrets.polygonAPIKey.isEmpty {
+                self.marketService = MassiveMarketService()
+                print("🚀 LIVE DATA ACTIVATED (Massive/Polygon)")
             } else {
                 self.marketService = MockMarketService()
                 print("⚠️ No API Key found in Secrets.swift. Using MOCK DATA.")
@@ -109,94 +109,114 @@ class MarketChartViewModel {
             try? await marketService.connect()
             let stream = await marketService.streamQuotes(for: [selectedSymbol])
             
-            for await tick in stream {
-                if Task.isCancelled { break }
+            // Mission 49/55 Fix: High-Frequency Data Throttling
+            // We detach the stream consumption from MainActor to prevent UI freezing
+            // when receiving massive amounts of ticks (100+ per sec).
+            await consumeStreamOffMainThread(stream)
+        }
+    }
+    
+    // Non-isolated stream consumer
+    nonisolated private func consumeStreamOffMainThread(_ stream: AsyncStream<MarketTick>) async {
+        var tickBuffer: [MarketTick] = []
+        var lastUpdate = Date()
+        let throttleInterval: TimeInterval = 0.15 // 150ms throttle (approx 6-7 FPS)
+        
+        for await tick in stream {
+            if Task.isCancelled { break }
+            
+            tickBuffer.append(tick)
+            
+            // Throttle Logic
+            let now = Date()
+            if now.timeIntervalSince(lastUpdate) >= throttleInterval || tickBuffer.count > 50 {
+                let batch = tickBuffer
+                tickBuffer.removeAll()
+                lastUpdate = now
                 
-                // 1. Update Price
-                self.currentPrice = tick.price
-                self.ticks.append(tick)
-                if self.ticks.count > maxPoints {
-                    self.ticks.removeFirst()
-                }
-                
-                // Mission 38: Aggregate Candle
+                // Flush to Main Actor
+                await self.processBatch(batch)
+            }
+        }
+    }
+    
+    // Main Actor Batch Processor
+    private func processBatch(_ ticks: [MarketTick]) async {
+        guard !ticks.isEmpty else { return }
+        
+        // 1. Process Signal Engine (Heavy) - Use the last tick for latest state,
+        // but maybe process all for OHLC? For efficiency, we process last tick for signals.
+        // For candles/volume, we iterate all.
+        
+        if let lastTick = ticks.last {
+            // Update "Live" Price immediately
+            self.currentPrice = lastTick.price
+            
+            // Update Buffers
+            self.ticks.append(contentsOf: ticks)
+            if self.ticks.count > maxPoints {
+                self.ticks.removeFirst(self.ticks.count - maxPoints)
+            }
+        
+            // Batch Process Candles & Volume
+            for tick in ticks {
                 self.processTickIntoCandle(tick)
-                
-                // Mission 40: Process Volume Profile
                 self.updateVolumeProfile(tick: tick)
+            }
+            
+            // 2. Process Signal (Once per batch to save CPU)
+            let context = await self.engine.process(tick: lastTick)
+            
+            // Update Cloud & Signals
+            self.trendAlignment = context.alignment
+            self.divergenceAlert = context.isDivergenceDetected
+            
+            self.vwap = context.vwap
+            self.vwapDistance = context.vwapDistance
+            self.openingRangeHigh = context.openingRangeHigh
+            self.openingRangeLow = context.openingRangeLow
+            self.yesterdayHigh = context.yesterdayHigh
+            self.yesterdayLow = context.yesterdayLow
+            self.isConsolidating = context.isConsolidating
+            
+            if let newSignal = context.tradeSignal {
+                self.activeSignal = newSignal
                 
-                // 2. Process Signal (Mission 34: Context Aware)
-                let context = await self.engine.process(tick: tick)
+                // Mission 39: History
+                let event = SignalEvent(timestamp: lastTick.timestamp, type: newSignal, price: lastTick.price)
+                self.signals.append(event)
                 
-                // Update Cloud
-                self.trendAlignment = context.alignment
-                self.divergenceAlert = context.isDivergenceDetected
-                
-                // Mission 36: Update VWAP & ORB
-                self.vwap = context.vwap
-                self.vwapDistance = context.vwapDistance
-                self.openingRangeHigh = context.openingRangeHigh
-                self.openingRangeLow = context.openingRangeLow
-                self.yesterdayHigh = context.yesterdayHigh
-                self.yesterdayLow = context.yesterdayLow
-                self.isConsolidating = context.isConsolidating
-                
-                if let newSignal = context.tradeSignal {
-                    self.activeSignal = newSignal
-                    
-                    // Mission 39: History
-                    let event = SignalEvent(timestamp: tick.timestamp, type: newSignal, price: tick.price)
-                    self.signals.append(event)
-                    
-                    // Audio Announcement (Mission 34)
-                    switch newSignal {
-                    case .strongBuy, .strongSell:
-                        AudioService.shared.announceSignal(symbol: tick.symbol, price: tick.price, signal: newSignal)
-                        
-                        // Sniper Sound?
-                        if context.alignment == .bullish || context.alignment == .bearish {
-                             // "SNIPER EXECUTION" sound
-                             AudioService.shared.playSniperSound()
-                             HapticManager.shared.playImpact()
-                        } else {
-                            // Standard Haptic
-                            let generator = UINotificationFeedbackGenerator()
-                            generator.notificationOccurred(.success)
-                        }
-                        
-                    default:
-                        break
+                // Audio
+                switch newSignal {
+                case .strongBuy, .strongSell:
+                    AudioService.shared.announceSignal(symbol: lastTick.symbol, price: lastTick.price, signal: newSignal)
+                    if context.alignment == .bullish || context.alignment == .bearish {
+                         AudioService.shared.playSniperSound()
+                         HapticManager.shared.playImpact()
+                    } else {
+                        let generator = UINotificationFeedbackGenerator()
+                        generator.notificationOccurred(.success)
                     }
-                    
-                    // Auto-hide old signals from "Active" badge after 3 seconds
-                    Task {
-                        try? await Task.sleep(for: .seconds(3))
-                        if self.activeSignal != nil {
-                            // Only clear if it's still the same one... simplistic logic for MVP
-                            // self.activeSignal = nil 
-                        }
-                    }
+                default: break
                 }
                 
-                // 3. Update Oracle Projection
-                // Get last 50 points for regression
-                if self.ticks.count >= 30 {
-                   let recentPrices = self.ticks.suffix(50).map { $0.price }
-                   let result = await self.projectionEngine.calculateProjection(recentPrices: recentPrices)
-                   self.projection = result
-                   
-                   // Check for Price Stretched (Mean Reversion)
-                   if let res = result, abs(res.currentDeviationSigma) > 2.5 {
-                       self.chartAlert = "PRICE STRETCHED: \(String(format: "%.1f", res.currentDeviationSigma))σ"
-                       // Haptic for danger
-                       if abs(res.currentDeviationSigma) > 3.0 { // Extreme
-                           let gen = UINotificationFeedbackGenerator()
-                           gen.notificationOccurred(.warning)
-                       }
-                   } else {
-                       self.chartAlert = nil
-                   }
+                Task {
+                    try? await Task.sleep(for: .seconds(3))
+                    if self.activeSignal != nil { } // Auto-hide logic placeholder
                 }
+            }
+            
+            // 3. Oracle (Check occasionally)
+            if self.ticks.count >= 30, Int.random(in: 0...5) == 0 { // 1 in 5 batches
+               let recentPrices = self.ticks.suffix(50).map { $0.price }
+               let result = await self.projectionEngine.calculateProjection(recentPrices: recentPrices)
+               self.projection = result
+               
+               if let res = result, abs(res.currentDeviationSigma) > 2.5 {
+                   self.chartAlert = "PRICE STRETCHED: \(String(format: "%.1f", res.currentDeviationSigma))σ"
+               } else {
+                   self.chartAlert = nil
+               }
             }
         }
     }

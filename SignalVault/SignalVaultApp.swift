@@ -31,9 +31,9 @@ struct SignalVaultApp: App {
 
     // Shared Market Service
     @State private var marketService: MarketDataProvider = {
-        // Mission 43: Auto-Switch to Alpaca
-        if !Secrets.alpacaAPIKeyID.isEmpty {
-            return LiveMarketService()
+        // Mission 49: Auto-Switch to Massive (Polygon)
+        if !Secrets.polygonAPIKey.isEmpty {
+            return MassiveMarketService()
         } else {
             return MockMarketService()
         }

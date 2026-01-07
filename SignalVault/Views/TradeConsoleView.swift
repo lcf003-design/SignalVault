@@ -131,6 +131,8 @@ struct TradeConsoleView: View {
             }
             .padding(.top, 8)
             
+
+            
             // 2. Status & Execution
             HStack {
                 // Status Badge
@@ -277,6 +279,7 @@ struct TradeConsoleView: View {
     
     private var buttonColor: Color {
         if isSafetyLockTriggered { return .gray } // Mission 42
+        
         guard let signal = activeSignal else { return .gray }
         switch signal {
         case .strongBuy: return .green

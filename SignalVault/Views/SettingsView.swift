@@ -14,10 +14,62 @@ struct SettingsView: View {
     
     // UI State
     @State private var isCredentialsSaved = false
+    @State private var isVerifying = false
+    @State private var verificationMessage = ""
+    @State private var isVerified = false
     
     // System Health (Mocked for now, but wired for future logic)
     @State private var isSocketConnected = true
     @State private var isCloudSyncActive = true
+    
+    // ... verification logic ...
+    
+    @MainActor
+    private func verifyKey() {
+        isVerifying = true
+        verificationMessage = ""
+        
+        let key = apiKeyInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !key.isEmpty else {
+            isVerifying = false
+            return
+        }
+        
+        Task {
+            // Check Tickers Endpoint (Usually always accessible if key is valid)
+            let urlString = "https://api.polygon.io/v3/reference/tickers?active=true&limit=1&apiKey=\(key)"
+            guard let url = URL(string: urlString) else {
+                isVerifying = false
+                return
+            }
+            
+            do {
+                let (data, response) = try await URLSession.shared.data(from: url)
+                if let httpResp = response as? HTTPURLResponse {
+                    if httpResp.statusCode == 200 {
+                        isVerified = true
+                        verificationMessage = "✅ Key Valid! (Access Granted)"
+                        HapticManager.shared.playSuccess()
+                    } else {
+                        isVerified = false
+                        let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                        let reason = (json?["error"] as? String) ?? (json?["message"] as? String) ?? "Unknown"
+                        
+                        if httpResp.statusCode == 401 {
+                            verificationMessage = "🚫 Invalid Key (401): \(reason)"
+                        } else if httpResp.statusCode == 403 {
+                            verificationMessage = "🚫 Access Denied (403): \(reason). Check entitlements."
+                        } else {
+                            verificationMessage = "⚠️ Error \(httpResp.statusCode): \(reason)"
+                        }
+                    }
+                }
+            } catch {
+                verificationMessage = "⚠️ Network Error: \(error.localizedDescription)"
+            }
+            isVerifying = false
+        }
+    }
     
     var body: some View {
         NavigationStack {
@@ -40,58 +92,47 @@ struct SettingsView: View {
                 }
                 
                 // Section 2: API Configuration
-                Section("Data Provider: Alpaca") {
+                Section("Data Provider: Massive (Polygon)") {
                     VStack(alignment: .leading) {
-                        Text("Alpaca Key ID")
+                        Text("Massive API Key")
                             .font(.caption)
                             .foregroundStyle(.secondary)
                         
-                        TextField("Enter Key ID (e.g., PK...)", text: $apiKeyInput)
-                            .textContentType(.username)
+                        TextField("Enter Massive/Polygon Key", text: $apiKeyInput)
                             .autocorrectionDisabled()
                             .textInputAutocapitalization(.characters)
+                            .submitLabel(.done)
                             .onSubmit {
-                                Secrets.alpacaAPIKeyID = apiKeyInput
+                                Secrets.polygonAPIKey = apiKeyInput
                             }
                     }
                     
-                    VStack(alignment: .leading) {
-                        Text("Alpaca Secret Key")
+                    if !verificationMessage.isEmpty {
+                        Text(verificationMessage)
                             .font(.caption)
-                            .foregroundStyle(.secondary)
-                        
-                        SecureField("Enter Secret Key", text: $secretInput)
-                            .textContentType(.password)
-                            .onSubmit {
-                                Secrets.alpacaSecretKey = secretInput
-                            }
+                            .foregroundStyle(isVerified ? .green : .red)
                     }
                     
-                    Link("Get Free API Keys", destination: URL(string: "https://alpaca.markets")!)
+                    Link("Get Massive API Key (Use Free Default)", destination: URL(string: "https://polygon.io")!) 
                         .font(.caption)
                     
-                    Button {
-                        Secrets.alpacaAPIKeyID = apiKeyInput
-                        Secrets.alpacaSecretKey = secretInput
-                        HapticManager.shared.playSuccess()
-                        isCredentialsSaved = true
-                        
-                        // Reset message after delay
-                        Task {
-                            try? await Task.sleep(for: .seconds(2))
-                            isCredentialsSaved = false
-                        }
-                    } label: {
-                        HStack {
-                            Text(isCredentialsSaved ? "Credentials Saved" : "Save Credentials")
-                            if isCredentialsSaved {
-                                Image(systemName: "checkmark.circle.fill")
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
+                    HStack {
+                         Button {
+                            print("🔘 Verify Button Tapped")
+                            Secrets.polygonAPIKey = apiKeyInput // Save
+                            HapticManager.shared.playToggleHaptic()
+                            verifyKey()
+                         } label: {
+                             if isVerifying {
+                                 ProgressView()
+                             } else {
+                                 Text("Verify & Save")
+                                     .frame(maxWidth: .infinity)
+                             }
+                         }
+                         .buttonStyle(.borderedProminent)
+                         .disabled(apiKeyInput.isEmpty || isVerifying)
                     }
-                    .buttonStyle(.borderedProminent)
-                    .tint(isCredentialsSaved ? .green : .blue)
                 }
                 
                 // Section 3: Social & Privacy (Mission 23)
@@ -163,8 +204,8 @@ struct SettingsView: View {
             .hideKeyboardOnTap()
             .onAppear {
                 // Pre-fill input
-                apiKeyInput = Secrets.alpacaAPIKeyID
-                secretInput = Secrets.alpacaSecretKey
+                apiKeyInput = Secrets.polygonAPIKey
+                // secretInput unused for Massive
             }
         }
     }
